@@ -1,0 +1,205 @@
+﻿<Window x:Class="CalculadoraFiscalUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Calculadora de Nómina Quincenal" 
+        Height="644" Width="1091"
+        WindowStartupLocation="CenterScreen" 
+        ResizeMode="NoResize"
+        Background="#F7F9FC"
+        FontFamily="Segoe UI">
+    <Grid Margin="20">
+        <!-- 🔹 TAB CONTROL -->
+        <TabControl x:Name="TabPrincipal" Margin="0,0,0,10">
+
+            <!-- ================= PESTAÑA 1: NÓMINA ================= -->
+            <TabItem Header="Nómina" FontSize="14">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="15">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Input Salario -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,10,0,15">
+                            <TextBlock Text="Salario Bruto Quincenal:" 
+                                       VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold" Margin="0,0,12,0"/>
+                            <TextBox x:Name="TxtSalario" Width="160" FontSize="15" Padding="8,6" 
+                                     Background="White" BorderBrush="#CCCCCC" BorderThickness="1"/>
+                            <Button Content="Calcular" Click="BtnCalcular_Click" 
+                                    Width="110" Margin="20,0,0,0" Padding="0,8"
+                                    Background="#0078D4" Foreground="White" FontSize="14" FontWeight="SemiBold" 
+                                    BorderBrush="Transparent" Cursor="Hand"/>
+                            <Button Content="Limpiar" Click="BtnLimpiar_Click" 
+                                    Width="90" Margin="10,0,0,0" Padding="0,8"
+                                    Background="#6B7280" Foreground="White" FontSize="14" 
+                                    BorderBrush="Transparent" Cursor="Hand"/>
+                        </StackPanel>
+
+                        <!-- Otros Descuentos -->
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,20">
+                            <TextBlock Text="➕ Otros Descuentos:" 
+                                       VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold" Margin="0,0,12,0"
+                                       Foreground="#6B7280"/>
+                            <TextBox x:Name="TxtOtrosDescuentos" Width="160" FontSize="14" Padding="8,6" 
+                                     Background="White" BorderBrush="#CCCCCC" BorderThickness="1"/>
+                            <TextBlock Text="(Opcional)" FontStyle="Italic" Foreground="#9CA3AF" 
+                                       VerticalAlignment="Center" Margin="10,0,0,0" FontSize="12"/>
+                        </StackPanel>
+
+                        <!-- Deducciones -->
+                        <GroupBox Grid.Row="2" Header="📉 Deducciones de Ley" 
+                                  FontSize="14" FontWeight="Bold" Padding="15" Margin="0,0,0,15"
+                                  BorderBrush="#E0E0E0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock x:Name="LblISR" Text="ISR (Renta): $0.00" Margin="0,6" FontSize="13"/>
+                                    <TextBlock x:Name="LblSS" Text="Seguro Social (9.75%): $0.00" Margin="0,6" FontSize="13"/>
+                                    <TextBlock x:Name="LblSE" Text="Seguro Educativo (1.25%): $0.00" Margin="0,6" FontSize="13"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                    <TextBlock x:Name="LblOtros" Text="Otros Descuentos: $0.00" 
+                                               Margin="0,6" FontSize="13" Foreground="#7C3AED"/>
+                                    <TextBlock x:Name="LblTotalDed" Text="Total Deducciones: $0.00" 
+                                               Margin="0,6" FontSize="14" FontWeight="Bold" Foreground="#DC2626"/>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- Resultados Netos -->
+                        <Border Grid.Row="3" Background="#F0F9FF" CornerRadius="8" Padding="20" Margin="0,0,0,15" BorderBrush="#BAE6FD" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock x:Name="LblNetoLegal" 
+                                           Text="📋 Neto después de impuestos: $0.00" 
+                                           HorizontalAlignment="Center" FontSize="16" FontWeight="SemiBold" Foreground="#0369A1" Margin="0,0,0,12"/>
+                                <TextBlock x:Name="LblSeparador" Text="─ Otros descuentos aplicados ─" 
+                                           HorizontalAlignment="Center" FontSize="11" Foreground="#94A3B8" FontStyle="Italic" Margin="0,0,0,8" Visibility="Collapsed"/>
+                                <TextBlock x:Name="LblNetoFinal" 
+                                           Text="💰 Salario Final a Recibir: $0.00" 
+                                           HorizontalAlignment="Center" FontSize="22" FontWeight="Bold" Foreground="#166534"/>
+                                <TextBlock x:Name="LblAyuda" Text="" 
+                                           HorizontalAlignment="Center" FontSize="11" Foreground="#64748B" FontStyle="Italic" Margin="0,8,0,0" TextWrapping="Wrap" TextAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Botón para ir a Gastos -->
+                        <Button Grid.Row="4" Content="📝 Ir a registrar mis gastos →" 
+                                Click="BtnIrAGastos_Click" HorizontalAlignment="Center" 
+                                Padding="20,10" FontSize="14" Background="#10B981" Foreground="White"
+                                BorderBrush="Transparent" Cursor="Hand" Margin="0,20,0,0"/>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ================= PESTAÑA 2: GASTOS ================= -->
+            <TabItem Header="📝 Gastos" FontSize="14">
+                <Grid Margin="15">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Salario Disponible (viene de la pestaña Nómina) -->
+                    <Border Grid.Row="0" Background="#FEF3C7" CornerRadius="8" Padding="15" Margin="0,0,0,33" BorderBrush="#FCD34D" BorderThickness="1">
+                        <StackPanel>
+                            <TextBlock Text="💵 Salario Final Disponible para Gastos:" 
+                                       FontSize="14" FontWeight="SemiBold" Foreground="#92400E"/>
+                            <TextBlock x:Name="LblSalarioDisponible" 
+                                       Text="$0.00" FontSize="24" FontWeight="Bold" Foreground="#B45309"
+                                       HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                            <TextBlock Text="↑ Calculado en la pestaña 'Nómina'" 
+                                       FontSize="10" Foreground="#A16207" FontStyle="Italic" 
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Formulario para agregar gasto -->
+                    <GroupBox Grid.Row="1" Header="➕ Agregar Nuevo Gasto" 
+                              FontSize="13" FontWeight="Bold" Padding="12" Margin="0,0,0,15"
+                              BorderBrush="#E5E7EB">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBox x:Name="TxtNombreGasto" Width="200" FontSize="13" Padding="8,6" 
+                                     Background="White" BorderBrush="#CCCCCC" BorderThickness="1"
+                                     ToolTip="Ej: Alquiler, Comida, Transporte"/>
+                            <TextBox x:Name="TxtMontoGasto" Width="120" FontSize="13" Padding="8,6" Margin="10,0,0,0"
+                                     Background="White" BorderBrush="#CCCCCC" BorderThickness="1"
+                                     ToolTip="Monto del gasto"/>
+                            <Button Content="Agregar" Click="BtnAgregarGasto_Click" 
+                                    Width="90" Margin="10,0,0,0" Padding="0,6"
+                                    Background="#3B82F6" Foreground="White" FontSize="13" FontWeight="SemiBold"
+                                    BorderBrush="Transparent" Cursor="Hand"/>
+                            <Button Content="Limpiar Lista" Click="BtnLimpiarGastos_Click" 
+                                    Width="110" Margin="10,0,0,0" Padding="0,6"
+                                    Background="#6B7280" Foreground="White" FontSize="13"
+                                    BorderBrush="Transparent" Cursor="Hand"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Lista de gastos (DataGrid) -->
+                    <Border Grid.Row="2" Background="White" CornerRadius="6" BorderBrush="#E5E7EB" BorderThickness="1" Padding="10" Margin="0,0,0,15">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="📋 Mis Gastos Registrados" 
+                                       FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
+                            <DataGrid x:Name="DgGastos" Grid.Row="1" 
+                                      AutoGenerateColumns="False" CanUserAddRows="False"
+                                      CanUserDeleteRows="False" IsReadOnly="True"
+                                      HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                                      Background="White" BorderBrush="#F3F4F6" FontSize="12">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Concepto" Binding="{Binding Nombre}" Width="*"/>
+                                    <DataGridTextColumn Header="Monto" Binding="{Binding Monto, StringFormat=C2}" Width="120" />
+                                    <DataGridTemplateColumn Header="Acción" Width="80">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="🗑️" Click="BtnEliminarGasto_Click" 
+                                                        Background="#EF4444" Foreground="White" BorderBrush="Transparent"
+                                                        Cursor="Hand" ToolTip="Eliminar este gasto"
+                                                        Tag="{Binding}"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Resumen Final -->
+                    <Border Grid.Row="3" Background="#ECFDF5" CornerRadius="8" Padding="20" BorderBrush="#6EE7B7" BorderThickness="1">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,8">
+                                <TextBlock Text="💵 Total Gastos:" FontSize="16" FontWeight="SemiBold" Foreground="#065F46"/>
+                                <TextBlock x:Name="LblTotalGastos" Text=" $0.00" FontSize="16" FontWeight="Bold" Foreground="#DC2626"/>
+                            </StackPanel>
+                            <Separator Background="#A7F3D0" Margin="0,0,0,12"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="🎯 SALDO RESTANTE:" FontSize="18" FontWeight="Bold" Foreground="#065F46"/>
+                                <TextBlock x:Name="LblSaldoRestante" Text=" $0.00" FontSize="24" FontWeight="Bold" Foreground="#059669" Margin="10,0,0,0"/>
+                            </StackPanel>
+                            <TextBlock x:Name="LblMensajeSaldo" Text="" 
+                                       HorizontalAlignment="Center" FontSize="12" FontStyle="Italic" 
+                                       Foreground="#6B7280" Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <!-- Pie de página -->
+        <TextBlock Grid.Row="1" Text="💡 Tip: Actualiza tu salario en 'Nómina' para refrescar el saldo disponible en 'Gastos'" 
+                   HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                   Foreground="#9CA3AF" FontStyle="Italic" FontSize="10"/>
+    </Grid>
+</Window>
