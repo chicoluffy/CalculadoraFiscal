@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Calculadora de Nómina Quincenal" 
-        Height="644" Width="1091"
+        Height="701" Width="1491"
         WindowStartupLocation="CenterScreen" 
         ResizeMode="NoResize"
         Background="#F7F9FC"
@@ -99,100 +99,191 @@
             </TabItem>
 
             <!-- ================= PESTAÑA 2: GASTOS ================= -->
-            <TabItem Header="📝 Gastos" FontSize="14">
-                <Grid Margin="15">
+            <TabItem Header="📝 Gastos" FontSize="14" Height="25" Margin="-2,0,-2,0" VerticalAlignment="Bottom">
+                <Grid Margin="12">
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Salario Disponible (viene de la pestaña Nómina) -->
-                    <Border Grid.Row="0" Background="#FEF3C7" CornerRadius="8" Padding="15" Margin="0,0,0,33" BorderBrush="#FCD34D" BorderThickness="1">
-                        <StackPanel>
-                            <TextBlock Text="💵 Salario Final Disponible para Gastos:" 
-                                       FontSize="14" FontWeight="SemiBold" Foreground="#92400E"/>
-                            <TextBlock x:Name="LblSalarioDisponible" 
-                                       Text="$0.00" FontSize="24" FontWeight="Bold" Foreground="#B45309"
-                                       HorizontalAlignment="Center" Margin="0,5,0,0"/>
-                            <TextBlock Text="↑ Calculado en la pestaña 'Nómina'" 
-                                       FontSize="10" Foreground="#A16207" FontStyle="Italic" 
-                                       HorizontalAlignment="Center"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Formulario para agregar gasto -->
-                    <GroupBox Grid.Row="1" Header="➕ Agregar Nuevo Gasto" 
-                              FontSize="13" FontWeight="Bold" Padding="12" Margin="0,0,0,15"
-                              BorderBrush="#E5E7EB">
+                    <!-- 🔹 Selector de Quincena (NUEVO) -->
+                    <GroupBox Grid.Row="0" Header="📅 Periodo" FontSize="12" FontWeight="Bold" Padding="8" Margin="0,0,0,8" BorderBrush="#E5E7EB">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBox x:Name="TxtNombreGasto" Width="200" FontSize="13" Padding="8,6" 
-                                     Background="White" BorderBrush="#CCCCCC" BorderThickness="1"
-                                     ToolTip="Ej: Alquiler, Comida, Transporte"/>
-                            <TextBox x:Name="TxtMontoGasto" Width="120" FontSize="13" Padding="8,6" Margin="10,0,0,0"
-                                     Background="White" BorderBrush="#CCCCCC" BorderThickness="1"
-                                     ToolTip="Monto del gasto"/>
-                            <Button Content="Agregar" Click="BtnAgregarGasto_Click" 
-                                    Width="90" Margin="10,0,0,0" Padding="0,6"
-                                    Background="#3B82F6" Foreground="White" FontSize="13" FontWeight="SemiBold"
-                                    BorderBrush="Transparent" Cursor="Hand"/>
-                            <Button Content="Limpiar Lista" Click="BtnLimpiarGastos_Click" 
-                                    Width="110" Margin="10,0,0,0" Padding="0,6"
-                                    Background="#6B7280" Foreground="White" FontSize="13"
-                                    BorderBrush="Transparent" Cursor="Hand"/>
+                            <TextBlock Text="Año:" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
+                            <ComboBox x:Name="CmbAnio" Width="80" FontSize="12" Margin="0,0,15,0" SelectionChanged="CmbPeriodo_SelectionChanged"/>
+                            <TextBlock Text="Quincena:" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
+                            <ComboBox x:Name="CmbQuincena" Width="100" FontSize="12" Margin="0,0,15,0" SelectionChanged="CmbPeriodo_SelectionChanged">
+                                <ComboBoxItem Content="1ra (días 1-15)" Tag="1"/>
+                                <ComboBoxItem Content="2da (días 16-fin)" Tag="2"/>
+                            </ComboBox>
+                            <Button Content="💾 Guardar" Click="BtnGuardarQuincena_Click" Width="85" FontSize="12" 
+                                    Background="#3B82F6" Foreground="White" Cursor="Hand" Margin="0,0,8,0"/>
+                            <Button Content="🗑️ Eliminar" Click="BtnEliminarQuincena_Click" Width="90" FontSize="12" 
+                                    Background="#EF4444" Foreground="White" Cursor="Hand"/>
+                            <TextBlock x:Name="LblEstadoGuardado" Text="" Margin="15,0,0,0" FontSize="11" Foreground="#059669" VerticalAlignment="Center"/>
                         </StackPanel>
                     </GroupBox>
 
-                    <!-- Lista de gastos (DataGrid) -->
-                    <Border Grid.Row="2" Background="White" CornerRadius="6" BorderBrush="#E5E7EB" BorderThickness="1" Padding="10" Margin="0,0,0,15">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <TextBlock Text="📋 Mis Gastos Registrados" 
-                                       FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
-                            <DataGrid x:Name="DgGastos" Grid.Row="1" 
-                                      AutoGenerateColumns="False" CanUserAddRows="False"
-                                      CanUserDeleteRows="False" IsReadOnly="True"
-                                      HeadersVisibility="Column" GridLinesVisibility="Horizontal"
-                                      Background="White" BorderBrush="#F3F4F6" FontSize="12">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Concepto" Binding="{Binding Nombre}" Width="*"/>
-                                    <DataGridTextColumn Header="Monto" Binding="{Binding Monto, StringFormat=C2}" Width="120" />
-                                    <DataGridTemplateColumn Header="Acción" Width="80">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <Button Content="🗑️" Click="BtnEliminarGasto_Click" 
-                                                        Background="#EF4444" Foreground="White" BorderBrush="Transparent"
-                                                        Cursor="Hand" ToolTip="Eliminar este gasto"
-                                                        Tag="{Binding}"/>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </Grid>
-                    </Border>
-
-                    <!-- Resumen Final -->
-                    <Border Grid.Row="3" Background="#ECFDF5" CornerRadius="8" Padding="20" BorderBrush="#6EE7B7" BorderThickness="1">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,8">
-                                <TextBlock Text="💵 Total Gastos:" FontSize="16" FontWeight="SemiBold" Foreground="#065F46"/>
-                                <TextBlock x:Name="LblTotalGastos" Text=" $0.00" FontSize="16" FontWeight="Bold" Foreground="#DC2626"/>
-                            </StackPanel>
-                            <Separator Background="#A7F3D0" Margin="0,0,0,12"/>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <TextBlock Text="🎯 SALDO RESTANTE:" FontSize="18" FontWeight="Bold" Foreground="#065F46"/>
-                                <TextBlock x:Name="LblSaldoRestante" Text=" $0.00" FontSize="24" FontWeight="Bold" Foreground="#059669" Margin="10,0,0,0"/>
-                            </StackPanel>
-                            <TextBlock x:Name="LblMensajeSaldo" Text="" 
-                                       HorizontalAlignment="Center" FontSize="12" FontStyle="Italic" 
-                                       Foreground="#6B7280" Margin="0,8,0,0"/>
+                    <!-- 💵 Salario Disponible (COMPACTO) -->
+                    <Border Grid.Row="1" Background="#FEF3C7" CornerRadius="6" Padding="10" Margin="0,0,0,10" BorderBrush="#FCD34D" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="💵 Disponible:" FontSize="12" FontWeight="SemiBold" Foreground="#92400E" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="LblSalarioDisponible" Text=" $0.00" FontSize="18" FontWeight="Bold" Foreground="#B45309" Margin="8,0,0,0"/>
+                            <TextBlock Text="← Calculado en Nómina" FontSize="10" Foreground="#A16207" FontStyle="Italic" Margin="15,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
+
+                    <!-- ➕ Agregar Gasto -->
+                    <GroupBox Grid.Row="2" Header="➕ Nuevo Gasto" FontSize="12" FontWeight="Bold" Padding="10" Margin="0,0,0,10" BorderBrush="#E5E7EB">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBox x:Name="TxtNombreGasto" Width="200" FontSize="12" Padding="6,5" Background="White" BorderBrush="#CCCCCC" BorderThickness="1"/>
+                            <ComboBox x:Name="CmbFiltroMes" Width="120" Margin="10,0,0,0" FontSize="12" Background="White">
+                                <ComboBoxItem Content="Mes 1 - Enero" Tag="1" IsSelected="True"/>
+                                <ComboBoxItem Content="Mes 2 - Febrero" Tag="2"/>
+                                <ComboBoxItem Content="Mes 3 - Marzo" Tag="3"/>
+                                <ComboBoxItem Content="Mes 4 - Abril" Tag="4"/>
+                                <ComboBoxItem Content="Mes 5 - Mayo" Tag="5"/>
+                                <ComboBoxItem Content="Mes 6 - Junio" Tag="6"/>
+                                <ComboBoxItem Content="Mes 7 - Julio" Tag="7"/>
+                                <ComboBoxItem Content="Mes 8 - Agosto" Tag="8"/>
+                                <ComboBoxItem Content="Mes 9 - Septiembre" Tag="9"/>
+                                <ComboBoxItem Content="Mes 10 - Octubre" Tag="10"/>
+                                <ComboBoxItem Content="Mes 11 - Noviembre" Tag="11"/>
+                                <ComboBoxItem Content="Mes 12 - Diciembre" Tag="12"/>
+                            </ComboBox>
+                            <TextBox x:Name="TxtMontoGasto" Width="110" FontSize="12" Padding="6,5" Margin="10,0,0,0" Background="White" BorderBrush="#CCCCCC" BorderThickness="1"/>
+                            <Button Content="Agregar +" Click="BtnAgregarGasto_Click" Width="85" Margin="10,0,0,0" Background="#3B82F6" Foreground="White" FontSize="12" Cursor="Hand"/>
+                            <Button Content="Limpiar Lista" Click="BtnLimpiarGastos_Click" Width="100" Margin="10,0,0,0" Background="#6B7280" Foreground="White" FontSize="12" Cursor="Hand"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- 📋 DataGrid (EXPANDIDO - Row Height="*") -->
+                    <Border Grid.Row="3" Background="White" CornerRadius="6" BorderBrush="#E5E7EB" BorderThickness="1" Padding="5" Margin="0,0,0,10">
+                        <DataGrid x:Name="DgGastos" AutoGenerateColumns="False" CanUserAddRows="False"
+                                  CanUserDeleteRows="False" IsReadOnly="True" HeadersVisibility="Column" 
+                                  GridLinesVisibility="Horizontal" Background="White" FontSize="12" RowHeight="32">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Concepto" Binding="{Binding Nombre}" Width="*"/>
+                                <DataGridTextColumn Header="Monto" Binding="{Binding Monto, StringFormat=C2}" Width="130"/>
+                                <DataGridTemplateColumn Header="Acción" Width="70">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="🗑️" Click="BtnEliminarGasto_Click" 
+                                                    Background="#EF4444" Foreground="White" BorderBrush="Transparent"
+                                                    Cursor="Hand" ToolTip="Eliminar" Tag="{Binding}" Width="50" Height="24" FontSize="11"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+
+                    <!-- 💵 Resumen Final (COMPACTO) -->
+                    <Border Grid.Row="4" Background="#ECFDF5" CornerRadius="6" Padding="12" BorderBrush="#6EE7B7" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="Total:" FontSize="13" FontWeight="SemiBold" Foreground="#065F46"/>
+                            <TextBlock x:Name="LblTotalGastos" Text=" $0.00" FontSize="13" FontWeight="Bold" Foreground="#DC2626" Margin="5,0,20,0"/>
+                            <TextBlock Text="| Saldo:" FontSize="13" FontWeight="SemiBold" Foreground="#065F46"/>
+                            <TextBlock x:Name="LblSaldoRestante" Text=" $0.00" FontSize="16" FontWeight="Bold" Foreground="#059669" Margin="5,0,0,0"/>
+                            <TextBlock x:Name="LblMensajeSaldo" Text="" FontSize="11" FontStyle="Italic" Foreground="#6B7280" Margin="15,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Ahorro" FontSize="14" Height="25" VerticalAlignment="Top">
+                <Grid Margin="15">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Configuración de Meta -->
+                    <GroupBox Grid.Row="0" Header="⚔️ Define tu Misión" FontSize="13" FontWeight="Bold" Padding="12" Margin="0,0,0,12" BorderBrush="#6366F1">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="🏆 Meta:" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox x:Name="TxtNombreMeta" Width="140" FontSize="12" Padding="5,4" Background="White" BorderBrush="#E5E7EB" 
+                                ToolTip="Nombre de tu objetivo (ej: Laptop, Vacaciones, Fondo)"/>
+
+                            <TextBlock Text="💰 Meta Total ($):" 
+                               ToolTip="El monto FINAL que quieres acumular. Al llegar aquí, ¡completas la misión!" 
+                               Margin="15,0,8,0" FontSize="12" VerticalAlignment="Center"/>     
+                            <TextBox x:Name="TxtMetaMonto" Width="120" FontSize="12" Padding="5,4" Background="White" BorderBrush="#E5E7EB"/>
+
+                            <TextBlock Text="📅 Plan Ideal/Q ($):" 
+                               ToolTip="Lo que planeas ahorrar idealmente por quincena. Se usa SOLO para calcular el tiempo estimado." 
+                               Margin="15,0,8,0" FontSize="12" VerticalAlignment="Center"/>     
+                            <TextBox x:Name="TxtAporteMeta" Width="110" FontSize="12" Padding="5,4" Background="White" BorderBrush="#E5E7EB"/>
+
+                            <Button Content="📌 Fijar Meta" Click="BtnFijarMeta_Click" Width="95" Margin="15,0,0,0" Background="#6366F1" Foreground="White" FontSize="12" Cursor="Hand"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Barra de Progreso RPG -->
+                    <Border Grid.Row="1" Background="#1E293B" CornerRadius="10" Padding="15" Margin="0,0,0,12">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,8">
+                                <TextBlock x:Name="LblNivel" Text="🟢 Nivel 1: Novato" FontSize="16" FontWeight="Bold" Foreground="#38BDF8"/>
+                                <TextBlock x:Name="LblPorcentaje" Text="0%" FontSize="16" FontWeight="Bold" Foreground="#10B981" Margin="20,0,0,0"/>
+                            </StackPanel>
+
+                            <ProgressBar x:Name="PgbProgreso" Height="24" Background="#334155" BorderBrush="#475569" BorderThickness="1" Foreground="#10B981" Margin="0,0,0,8">
+                                <ProgressBar.Template>
+                                    <ControlTemplate TargetType="ProgressBar">
+                                        <Grid>
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="12" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"/>
+                                            <Border x:Name="PART_Indicator" CornerRadius="12" HorizontalAlignment="Left" Background="{TemplateBinding Foreground}">
+                                                <Border.Effect>
+                                                    <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#10B981" Opacity="0.7"/>
+                                                </Border.Effect>
+                                            </Border>
+                                        </Grid>
+                                    </ControlTemplate>
+                                </ProgressBar.Template>
+                            </ProgressBar>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="💰 Acumulado:" FontSize="12" Foreground="#94A3B8"/>
+                                <TextBlock x:Name="LblActual" Text=" $0.00" FontSize="14" FontWeight="SemiBold" Foreground="#F8FAFC" Margin="5,0,20,0"/>
+                                <TextBlock Text="| ⏳ Estimado:" FontSize="12" Foreground="#94A3B8"/>
+                                <TextBlock x:Name="LblEta" Text=" ~0 quincenas" FontSize="14" FontWeight="SemiBold" Foreground="#FBBF24" Margin="5,0,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Agregar Ahorro -->
+                    <GroupBox Grid.Row="2" Header="💎 Depositar esta Quincena" FontSize="13" FontWeight="Bold" Padding="12" Margin="0,0,0,12" BorderBrush="#6366F1">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBox x:Name="TxtDepositoAhorro" Width="150" FontSize="13" Padding="8,6" Background="White" BorderBrush="#E5E7EB"/>
+                            <Button Content="⬆️ Subir XP" Click="BtnAgregarAhorro_Click" Width="100" Margin="15,0,0,0" Background="#8B5CF6" Foreground="White" FontSize="13" Cursor="Hand"/>
+                            <TextBlock x:Name="LblFeedback" Text="" Margin="20,0,0,0" FontSize="12" FontStyle="Italic" Foreground="#38BDF8" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <!-- Historial -->
+                    <Border Grid.Row="3" Background="#F8FAFC" CornerRadius="8" BorderBrush="#E2E8F0" BorderThickness="1" Padding="10" Margin="0,0,0,12">
+                        <DataGrid x:Name="DgHistorialAhorro" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" HeadersVisibility="Column" FontSize="11" RowHeight="26" Background="Transparent" BorderBrush="Transparent">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat=dd/MM/yyyy}" Width="80"/>
+                                <DataGridTextColumn Header="Periodo" Width="90">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding StringFormat="{}{0}-Q{1}">
+                                            <Binding Path="Anio"/>
+                                            <Binding Path="Quincena"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Aporte" Binding="{Binding Monto, StringFormat=C2}" Width="100"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+
+                    <Button Grid.Row="4" Content="💾 Guardar Progreso" Click="BtnGuardarAhorro_Click" HorizontalAlignment="Center" Padding="20,8" FontSize="13" Background="#059669" Foreground="White" Cursor="Hand"/>
                 </Grid>
             </TabItem>
         </TabControl>
