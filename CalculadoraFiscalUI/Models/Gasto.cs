@@ -7,8 +7,9 @@ namespace CalculadoraFiscalUI.clases
 {
     public class Gasto : INotifyPropertyChanged
     {
-        private string _nombre;
+        private string _nombre = string.Empty;
         private decimal _monto;
+        private int _mes;
 
         public string Nombre
         {
@@ -22,7 +23,12 @@ namespace CalculadoraFiscalUI.clases
             set { _monto = value; OnPropertyChanged(nameof(Monto)); }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public int Mes 
+        {
+            get => _mes; set { _mes = value; OnPropertyChanged(nameof(Mes)); }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string name) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
