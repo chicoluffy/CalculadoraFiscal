@@ -34,10 +34,10 @@ namespace CalculadoraFiscalUI
             InitializeComponent();
             _repo = new RepositorioQuincenas(AppContext.BaseDirectory);
             DgGastos.ItemsSource = _listaGastos;
-            InicializarFiltroMes();
             InicializarPeriodos();
             CargarPeriodoPorDefecto();
             CargarMetaAhorro();
+            CargarProyectoAuto();
         }
 
         #region INICIALIZACIÓN Y CARGA DE DATOS
@@ -52,7 +52,7 @@ namespace CalculadoraFiscalUI
         private void CargarPeriodoPorDefecto()
         {
             ActualizarPeriodoActual();
-            CargarGastosDelPerido();
+            CargarGastosDelPeriodo();
         }
 
         private void ActualizarPeriodoActual()
@@ -146,76 +146,106 @@ namespace CalculadoraFiscalUI
 
         private void BtnIrAGastos_Click(object sender, RoutedEventArgs e) => TabPrincipal.SelectedIndex = 1;
 
-        private void ActualizarSalarioDisponibleEnGastos()
-        {
-            LblSalarioDisponible.Text = SalarioFinalCalculado.ToString("C2");
-            ActualizarResumenGastos();
-        }
+        private void ActualizarSalarioDisponibleEnGastos() => AplicarFiltroGastos();
         #endregion
 
         #region Pestaña Gastos
         private void BtnAgregarGasto_Click(object sender, RoutedEventArgs e)
         {
             string nombre = TxtNombreGasto.Text.Trim();
-            if (string.IsNullOrWhiteSpace(nombre)) { MessageBox.Show("Ingresa un nombre", "Campo requerido", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (string.IsNullOrWhiteSpace(nombre))
+            { MessageBox.Show("Ingresa un concepto", "Campo requerido", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+
             if (!decimal.TryParse(TxtMontoGasto.Text.Replace("$", "").Replace(" ", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal monto) || monto <= 0)
-            { MessageBox.Show("Monto inválido > 0", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            { MessageBox.Show("Monto inválido (>0)", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
 
-            int mes = int.TryParse(((ComboBoxItem)CmbFiltroMes.SelectedItem)?.Tag?.ToString(), out int m) ? m : 1;
+            // Toma automáticamente el contexto de arriba
+            int mes = int.TryParse(((ComboBoxItem)CmbMesContexto.SelectedItem).Tag?.ToString(), out int m) ? m : 1;
+            int q = int.TryParse(((ComboBoxItem)CmbQMesContexto.SelectedItem).Tag?.ToString(), out int qTag) ? qTag : 1;
 
-            _listaGastos.Add(new Gasto { Nombre = nombre, Monto = monto, Mes = mes });
+            _listaGastos.Add(new Gasto { Nombre = nombre, Monto = monto, Mes = mes, QuincenaMes = q });
             TxtNombreGasto.Clear(); TxtMontoGasto.Clear(); TxtNombreGasto.Focus();
-            CmbFiltroMes_SelectionChanged(this, new SelectionChangedEventArgs(null, null, null)); // Refresca filtro
+
+            AplicarFiltroGastos(); // Refresca tabla
             MarcarComoModificado();
         }
 
-        private void BtnEliminarGasto_Click(object sender,RoutedEventArgs e)
+
+        private void AplicarFiltroGastos()
+        {
+            // 🛡️ Guarda contra carga inicial o tab no visible
+            if (!IsLoaded || CmbMesContexto.SelectedItem == null || CmbQMesContexto.SelectedItem == null) return;
+
+            int mes = int.TryParse(((ComboBoxItem)CmbMesContexto.SelectedItem).Tag?.ToString(), out int m) ? m : 1;
+            int q = int.TryParse(((ComboBoxItem)CmbQMesContexto.SelectedItem).Tag?.ToString(), out int qTag) ? qTag : 1;
+
+            var periodoActual = _listaGastos.Where(g => g.Mes == mes && g.QuincenaMes == q).ToList();
+            DgGastos.ItemsSource = periodoActual;
+
+            // 🔢 Cálculos centralizados
+            decimal totalGastos = periodoActual.Sum(g => g.Monto);
+            decimal disponibleReal = SalarioFinalCalculado - _metaActual.AportePorQuincena - totalGastos;
+            decimal pendiente = SalarioFinalCalculado - totalGastos;
+
+            // 🖥️ UI Superior (Disponible + Reserva)
+            LblSalarioDisponible.Text = disponibleReal.ToString("C2");
+            LblReservaAhorro.Text = _metaActual.AportePorQuincena > 0 ? $"(Reservado: {_metaActual.AportePorQuincena:C2})" : "";
+            LblReservaAhorro.Foreground = _metaActual.AportePorQuincena > SalarioFinalCalculado ? Brushes.Red : new SolidColorBrush(Color.FromRgb(99, 102, 241));
+
+            // 🖥️ UI Inferior (Resumen)
+            LblTotalGastos.Text = $" {totalGastos:C2}";
+            LblSaldoRestante.Text = $" {pendiente:C2}";
+            LblMensajeSaldo.Text = disponibleReal >= 0 ? "✨ Suficiente para gastos + ahorro" : "⚠️ Ajusta tu presupuesto";
+            LblMensajeSaldo.Foreground = disponibleReal >= 0 ? Brushes.Gray : Brushes.Red;
+        }
+
+        private void BtnEliminarGasto_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is Gasto gasto)
             {
                 _listaGastos.Remove(gasto);
-                ActualizarResumenGastos();
+                AplicarFiltroGastos(); // ← Cambiado
                 MarcarComoModificado();
             }
         }
-        private void BtnLimpiarGastos_Click(object sender,RoutedEventArgs e)
+        private void BtnLimpiarGastos_Click(object sender, RoutedEventArgs e)
         {
-            if (MessageBox.Show("¿Eliminar todos los gastos de esta quincena?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            if (CmbMesContexto.SelectedItem == null || CmbQMesContexto.SelectedItem == null) return;
+
+            int mes = int.TryParse(((ComboBoxItem)CmbMesContexto.SelectedItem).Tag?.ToString(), out int m) ? m : 1;
+            int q = int.TryParse(((ComboBoxItem)CmbQMesContexto.SelectedItem).Tag?.ToString(), out int qTag) ? qTag : 1;
+            string nombreMes = ((ComboBoxItem)CmbMesContexto.SelectedItem).Content?.ToString() ?? "";
+
+            if (MessageBox.Show($"¿Eliminar TODOS los gastos de {nombreMes} ({(q == 1 ? "1ra" : "2da")})?",
+                "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
-                _listaGastos.Clear();
-                ActualizarResumenGastos();
+                // ✅ FIX: ObservableCollection no tiene RemoveAll. UsamosToList() + foreach Remove()
+                var paraEliminar = _listaGastos.Where(g => g.Mes == mes && g.QuincenaMes == q).ToList();
+                foreach (var gasto in paraEliminar)
+                    _listaGastos.Remove(gasto);
+
+                AplicarFiltroGastos();
                 MarcarComoModificado();
             }
         }
 
-        private void ActualizarResumenGastos()
+
+        private void CmbContexto_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            decimal totalGastos = _listaGastos.Sum(g => g.Monto);
-            decimal saldoRestante = SalarioFinalCalculado - totalGastos;
+            // IsLoaded evita NullReferenceException durante la carga inicial de la ventana
+            if (!IsLoaded) return;
+            AplicarFiltroGastos();
+        }
 
-            string fmt = "C2";
-            LblTotalGastos.Text = $" {totalGastos.ToString(fmt)}";
-            LblSaldoRestante.Text = $" {saldoRestante.ToString(fmt)}";
 
-            // Mensaje contextual según el saldo
-            if (saldoRestante < 0)
-            {
-                LblSaldoRestante.Foreground = System.Windows.Media.Brushes.Red;
-                LblMensajeSaldo.Text = "⚠️ ¡Atención! Estás gastando más de lo disponible.";
-                LblMensajeSaldo.Foreground = System.Windows.Media.Brushes.Red;
-            }
-            else if (saldoRestante == 0)
-            {
-                LblSaldoRestante.Foreground = System.Windows.Media.Brushes.DarkOrange;
-                LblMensajeSaldo.Text = "⚡ Has usado todo tu salario disponible.";
-                LblMensajeSaldo.Foreground = System.Windows.Media.Brushes.Gray;
-            }
-            else
-            {
-                LblSaldoRestante.Foreground = System.Windows.Media.Brushes.DarkGreen;
-                LblMensajeSaldo.Text = $"✨ ¡Bien! Te quedan {saldoRestante.ToString(fmt)} para ahorrar o imprevistos.";
-                LblMensajeSaldo.Foreground = System.Windows.Media.Brushes.Gray;
-            }
+
+           private void ActualizarResumenGastos(decimal totalGastos, decimal disponibleReal)
+        {
+            decimal pendiente = SalarioFinalCalculado - totalGastos;
+            LblTotalGastos.Text = $" {totalGastos.ToString("C2")}";
+            LblSaldoRestante.Text = $" {pendiente.ToString("C2")}";
+            LblMensajeSaldo.Text = disponibleReal >= 0 ? "✨ Suficiente para gastos + ahorro" : "⚠️ Ajusta tu presupuesto";
+            LblMensajeSaldo.Foreground = disponibleReal >= 0 ? System.Windows.Media.Brushes.Gray : System.Windows.Media.Brushes.Red;
         }
         private void MarcarComoModificado()
         {
@@ -246,28 +276,25 @@ namespace CalculadoraFiscalUI
             }
         }
 
-        private void CargarGastosDelPerido()
+        private void CargarGastosDelPeriodo()
         {
             var datos = _repo.Cargar(_periodoActual);
             if (datos == null)
             {
                 _listaGastos.Clear();
-                ActualizarResumenGastos();
+                AplicarFiltroGastos(); // ← Cambiado
                 LblEstadoGuardado.Text = "Sin datos";
-                LblEstadoGuardado.Foreground = Brushes.Gray; 
+                LblEstadoGuardado.Foreground = Brushes.Gray;
                 return;
-
             }
 
             SalarioFinalCalculado = datos.SalarioFinal;
             _listaGastos.Clear();
-            foreach (var g in datos.Gastos)
-                _listaGastos.Add(g);
+            foreach (var g in datos.Gastos) _listaGastos.Add(g);
 
-            ActualizarSalarioDisponibleEnGastos();
-            LblEstadoGuardado.Text = "Cargado"; 
+            AplicarFiltroGastos(); // ← Cambiado
+            LblEstadoGuardado.Text = "Cargado";
             LblEstadoGuardado.Foreground = Brushes.DarkGreen;
-
         }
 
         private void BtnEliminarQuincena_Click(object sender, RoutedEventArgs e)
@@ -286,27 +313,6 @@ namespace CalculadoraFiscalUI
         }
         #endregion
 
-        #region filtro por mes
-        private void InicializarFiltroMes()
-        {
-            string[] nombresMeses = { "Todos", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic" };
-            for (int i = 1; i <= 12; i++)
-                CmbFiltroMes.Items.Add(new ComboBoxItem { Content = nombresMeses[i], Tag = i });
-        }
-
-        private void CmbFiltroMes_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            var selected = CmbFiltroMes.SelectedItem as ComboBoxItem;
-            if (selected == null) return;
-
-            if (selected.Tag is int mes && mes > 0)
-                DgGastos.ItemsSource = _listaGastos.Where(g => g.Mes == mes).ToList();
-            else
-                DgGastos.ItemsSource = _listaGastos;
-
-            ActualizarResumenGastos();
-        }
-        #endregion
 
         #region Ahorro rpg
         private MetaAhorro _metaActual = new();
@@ -448,6 +454,99 @@ namespace CalculadoraFiscalUI
             catch { /* Ignorar si está corrupto, se crea uno nuevo */ }
         }
         #endregion
+        #region 🚗 Proyecto Auto
+        private ProyectoAuto _proyectoAuto = new();
+        private readonly string _rutaAuto = System.IO.Path.Combine(AppContext.BaseDirectory, "data", "proyecto_auto.json");
 
+        private void BtnActualizarAuto_Click(object sender, RoutedEventArgs e)
+        {
+            if (!decimal.TryParse(TxtFondoAuto.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal fondo) || fondo < 0)
+            { MessageBox.Show("Fondo actual inválido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (!decimal.TryParse(TxtAporteAuto.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal aporte) || aporte < 0)
+            { MessageBox.Show("Aporte quincenal inválido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+
+            _proyectoAuto.FondoActual = fondo;
+            _proyectoAuto.AporteQuincenal = aporte;
+            CalcularEtaAuto();
+        }
+
+        private void BtnAgregarItemAuto_Click(object sender, RoutedEventArgs e)
+        {
+            string item = TxtItemAuto.Text.Trim();
+            if (string.IsNullOrWhiteSpace(item)) return;
+            if (!decimal.TryParse(TxtCostoItem.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal costo) || costo <= 0)
+            { MessageBox.Show("Costo inválido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+
+            _proyectoAuto.Checklist.Add(new ItemChecklistAuto
+            {
+                Nombre = item,
+                CostoEstimado = costo,
+                EsPrioridad = ChkPrioridadAuto.IsChecked == true,
+                Completado = false
+            });
+
+            TxtItemAuto.Clear(); TxtCostoItem.Clear(); ChkPrioridadAuto.IsChecked = false;
+            CalcularEtaAuto();
+        }
+
+        private void CalcularEtaAuto()
+        {
+            decimal totalNecesario = _proyectoAuto.Checklist.Where(i => !i.Completado).Sum(i => i.CostoEstimado);
+            decimal pendiente = Math.Max(0, totalNecesario - _proyectoAuto.FondoActual);
+            LblNecesitaAuto.Text = $" {totalNecesario.ToString("C2")}";
+
+            if (pendiente <= 0) { LblEtaAuto.Text = " 🎉 ¡Fondo cubre todo!"; LblAlertaAuto.Text = ""; return; }
+            if (_proyectoAuto.AporteQuincenal <= 0) { LblEtaAuto.Text = " ⏸️ Define aporte"; LblAlertaAuto.Text = ""; return; }
+
+            double quincenas = Math.Ceiling((double)pendiente / (double)_proyectoAuto.AporteQuincenal);
+            double meses = quincenas / 2.0;
+            LblEtaAuto.Text = $" ~{meses:F1} meses ({quincenas:F0} Q)";
+
+            // 🔗 Validación contra disponible real de la quincena activa
+            decimal disponibleActual = decimal.Parse(LblSalarioDisponible.Text.Replace("$", "").Replace(" ", ""));
+            if (_proyectoAuto.AporteQuincenal > disponibleActual)
+                LblAlertaAuto.Text = "⚠️ Tu aporte supera el disponible de esta quincena";
+            else
+                LblAlertaAuto.Text = "";
+        }
+
+        private void BtnGuardarAuto_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_rutaAuto)!);
+                string json = System.Text.Json.JsonSerializer.Serialize(_proyectoAuto, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                System.IO.File.WriteAllText(_rutaAuto, json, System.Text.Encoding.UTF8);
+                MessageBox.Show("Proyecto Auto guardado", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+        }
+
+        private void CargarProyectoAuto()
+        {
+            if (!System.IO.File.Exists(_rutaAuto)) return;
+            try
+            {
+                string json = System.IO.File.ReadAllText(_rutaAuto, System.Text.Encoding.UTF8);
+                var data = System.Text.Json.JsonSerializer.Deserialize<ProyectoAuto>(json);
+                if (data != null)
+                {
+                    _proyectoAuto = data;
+                    TxtFondoAuto.Text = data.FondoActual.ToString();
+                    TxtAporteAuto.Text = data.AporteQuincenal.ToString();
+                    DgChecklistAuto.ItemsSource = data.Checklist;
+                    CalcularEtaAuto();
+                }
+            }
+            catch { }
+        }
+        #endregion
+    }
+    public static class StringExtensions
+    {
+        public static int ParseIntSafe(this string s)
+        {
+            return int.TryParse(s, out int r) ? r : 0;
+        }
     }
 }
