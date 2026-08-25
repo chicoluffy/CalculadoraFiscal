@@ -1,4 +1,4 @@
-﻿using CalculadoraFiscalUI.clases;
+using CalculadoraFiscalUI.clases;
 using CalculadoraFiscalUI.Models;
 using CalculadoraFiscalUI.Services;
 using System.Collections.ObjectModel;
@@ -37,7 +37,6 @@ namespace CalculadoraFiscalUI
             InicializarPeriodos();
             CargarPeriodoPorDefecto();
             CargarMetaAhorro();
-            CargarProyectoAuto();
         }
 
         #region INICIALIZACIÓN Y CARGA DE DATOS
@@ -182,15 +181,16 @@ namespace CalculadoraFiscalUI
             var periodoActual = _listaGastos.Where(g => g.Mes == mes && g.QuincenaMes == q).ToList();
             DgGastos.ItemsSource = periodoActual;
 
-            // 🔢 Cálculos centralizados
+            // 🔢 Cálculos centralizados (Reserva Q1 de $300 o Q2 de $350 según la quincena activa)
             decimal totalGastos = periodoActual.Sum(g => g.Monto);
-            decimal disponibleReal = SalarioFinalCalculado - _metaActual.AportePorQuincena - totalGastos;
+            decimal aporteReserva = (q == 1) ? _metaActual.AporteQ1 : _metaActual.AporteQ2;
+            decimal disponibleReal = SalarioFinalCalculado - aporteReserva - totalGastos;
             decimal pendiente = SalarioFinalCalculado - totalGastos;
 
             // 🖥️ UI Superior (Disponible + Reserva)
             LblSalarioDisponible.Text = disponibleReal.ToString("C2");
-            LblReservaAhorro.Text = _metaActual.AportePorQuincena > 0 ? $"(Reservado: {_metaActual.AportePorQuincena:C2})" : "";
-            LblReservaAhorro.Foreground = _metaActual.AportePorQuincena > SalarioFinalCalculado ? Brushes.Red : new SolidColorBrush(Color.FromRgb(99, 102, 241));
+            LblReservaAhorro.Text = aporteReserva > 0 ? $"(Reservado Q{q}: {aporteReserva:C2})" : "";
+            LblReservaAhorro.Foreground = aporteReserva > SalarioFinalCalculado ? Brushes.Red : new SolidColorBrush(Color.FromRgb(99, 102, 241));
 
             // 🖥️ UI Inferior (Resumen)
             LblTotalGastos.Text = $" {totalGastos:C2}";
@@ -318,42 +318,73 @@ namespace CalculadoraFiscalUI
         private MetaAhorro _metaActual = new();
         private readonly string _rutaMeta = System.IO.Path.Combine(AppContext.BaseDirectory, "data", "meta_ahorro.json");
 
-
         private void BtnFijarMeta_Click(object sender, RoutedEventArgs e)
         {
             if (!decimal.TryParse(TxtMetaMonto.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal obj) || obj <= 0)
             { MessageBox.Show("Define un objetivo válido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            if (!decimal.TryParse(TxtAporteMeta.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal aporte) || aporte <= 0)
-            { MessageBox.Show("Define un aporte quincenal válido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (!decimal.TryParse(TxtAporteQ1.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal q1) || q1 < 0)
+            { MessageBox.Show("Define un aporte de 1ra quincena válido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (!decimal.TryParse(TxtAporteQ2.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal q2) || q2 < 0)
+            { MessageBox.Show("Define un aporte de 2da quincena válido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (!decimal.TryParse(TxtMontoDecimo.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal decimo) || decimo < 0)
+            { MessageBox.Show("Define un monto de décimo válido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
 
-            _metaActual.Nombre = string.IsNullOrWhiteSpace(TxtNombreMeta.Text) ? "Mi Meta" : TxtNombreMeta.Text;
+            _metaActual.Nombre = string.IsNullOrWhiteSpace(TxtNombreMeta.Text) ? "Meta Principal (Moto + Casa)" : TxtNombreMeta.Text;
             _metaActual.MontoObjetivo = obj;
-            _metaActual.AportePorQuincena = aporte;
+            _metaActual.AporteQ1 = q1;
+            _metaActual.AporteQ2 = q2;
+            _metaActual.MontoDecimo = decimo;
+            _metaActual.AportePorQuincena = (q1 + q2) / 2m;
+
             ActualizarUIAhorro();
-            LblFeedback.Text = "Meta configurada. ¡A subir de nivel!";
+            LblFeedback.Text = "Plan configurado. ¡Proyección a Dic 2027 actualizada!";
+        }
+
+        private void CmbTipoDeposito_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!IsLoaded || CmbTipoDeposito.SelectedItem == null) return;
+            var comboTipo = CmbTipoDeposito.SelectedItem as ComboBoxItem;
+            string tipo = comboTipo?.Tag?.ToString() ?? "";
+
+            switch (tipo)
+            {
+                case "Aporte Q1":
+                    TxtDepositoAhorro.Text = _metaActual.AporteQ1.ToString();
+                    break;
+                case "Aporte Q2":
+                    TxtDepositoAhorro.Text = _metaActual.AporteQ2.ToString();
+                    break;
+                case "Décimo":
+                    TxtDepositoAhorro.Text = _metaActual.MontoDecimo.ToString();
+                    break;
+            }
         }
 
         private void BtnAgregarAhorro_Click(object sender, RoutedEventArgs e)
         {
-            if (_metaActual.MontoObjetivo == 0) { MessageBox.Show("Primero fija una meta", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            if (_metaActual.MontoObjetivo == 0) { MessageBox.Show("Primero fija una meta u objetivo total", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
             if (!decimal.TryParse(TxtDepositoAhorro.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal monto) || monto <= 0)
             { MessageBox.Show("Monto inválido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+
+            var comboTipo = CmbTipoDeposito.SelectedItem as ComboBoxItem;
+            string tipoStr = comboTipo?.Tag?.ToString() ?? "Quincenal";
 
             _metaActual.MontoActual += monto;
             _metaActual.Historial.Insert(0, new HistorialAhorro
             {
                 Fecha = DateTime.Now,
-                Anio = (int)CmbAnio.SelectedItem,
-                Quincena = (int)((ComboBoxItem)CmbQuincena.SelectedItem).Tag,
-                Monto = monto
+                Anio = int.TryParse(CmbAnio.SelectedItem?.ToString(), out int a) ? a : DateTime.Now.Year,
+                Quincena = (CmbQuincena.SelectedItem as ComboBoxItem)?.Tag != null && int.TryParse(((ComboBoxItem)CmbQuincena.SelectedItem).Tag.ToString(), out int q) ? q : 1,
+                Monto = monto,
+                Tipo = tipoStr,
+                MetaNombre = _metaActual.Nombre
             });
 
             TxtDepositoAhorro.Clear();
             ActualizarUIAhorro();
 
-            // Mensajes tipo RPG
             double pct = (double)_metaActual.MontoActual / (double)_metaActual.MontoObjetivo * 100;
-            LblFeedback.Text = pct >= 100 ? "🏆 ¡META COMPLETADA! Eres legendario." : $"✨ +{monto.ToString("C0")} XP acumulados.";
+            LblFeedback.Text = pct >= 100 ? "🏆 ¡META COMPLETADA! Eres legendario." : $"✨ +{monto:C0} ({tipoStr}) registrado.";
         }
 
         private void ActualizarUIAhorro()
@@ -363,50 +394,66 @@ namespace CalculadoraFiscalUI
                 : 0;
             PgbProgreso.Value = pct;
             LblPorcentaje.Text = $"{pct:F1}%";
-            LblActual.Text = $" {_metaActual.MontoActual.ToString("C2")}";
+            LblActual.Text = $" {_metaActual.MontoActual:C2}";
             LblNivel.Text = ObtenerNivelRPG(pct);
 
-            // Cálculo ETA
-            decimal restante = _metaActual.MontoObjetivo - _metaActual.MontoActual;
-            if (restante <= 0)
+            // 🚀 Proyección detallada a Diciembre 2027
+            DateTime hoy = DateTime.Now;
+            int cantQ1 = 0;
+            int cantQ2 = 0;
+            int cantDecimos = 0;
+
+            int startYear = hoy.Year;
+            int startMonth = hoy.Month;
+            int startQ = hoy.Day <= 15 ? 1 : 2;
+
+            for (int y = startYear; y <= 2027; y++)
             {
-                LblEta.Text = " 🎉 ¡Meta alcanzada!";
-                LblEta.Foreground = Brushes.Gold;
-                return;
+                int mStart = (y == startYear) ? startMonth : 1;
+                int mEnd = (y == 2027) ? 12 : 12;
+                for (int m = mStart; m <= mEnd; m++)
+                {
+                    // 1ra Quincena
+                    if (!(y == startYear && m == startMonth && startQ > 1))
+                    {
+                        cantQ1++;
+                    }
+                    // 2da Quincena
+                    cantQ2++;
+
+                    // Décimos (Abril, Agosto, Diciembre)
+                    if ((m == 4 || m == 8 || m == 12) && !(y == startYear && m == startMonth && hoy.Day > 15))
+                    {
+                        cantDecimos++;
+                    }
+                }
             }
 
-            decimal promedioReal = 0m;
-            if (_metaActual.Historial.Count > 0)
+            decimal proyectadoQuincenas = (cantQ1 * _metaActual.AporteQ1) + (cantQ2 * _metaActual.AporteQ2);
+            decimal proyectadoDecimos = cantDecimos * _metaActual.MontoDecimo;
+            decimal totalProyectado = _metaActual.MontoActual + proyectadoQuincenas + proyectadoDecimos;
+
+            LblProyeccionDic2027.Text = $" {totalProyectado:C2}";
+
+            if (_metaActual.MontoObjetivo > 0)
             {
-                promedioReal = _metaActual.Historial.Average(h => h.Monto);
+                decimal dif = totalProyectado - _metaActual.MontoObjetivo;
+                if (dif >= 0)
+                {
+                    LblEstadoMeta2027.Text = $"🚀 Plan en curso: ¡Superas tu meta por {dif:C2} para Dic 2027! ({cantQ1} Q1 de ${_metaActual.AporteQ1:F0}, {cantQ2} Q2 de ${_metaActual.AporteQ2:F0}, {cantDecimos} Décimos de ${_metaActual.MontoDecimo:F0})";
+                    LblEstadoMeta2027.Foreground = Brushes.LightGreen;
+                }
+                else
+                {
+                    LblEstadoMeta2027.Text = $"⚠️ Te faltarán {Math.Abs(dif):C2} para alcanzar la meta en Dic 2027 ({cantQ1} Q1, {cantQ2} Q2, {cantDecimos} Décimos restantes)";
+                    LblEstadoMeta2027.Foreground = Brushes.Orange;
+                }
             }
-            decimal ritmoProyeccion = promedioReal > 0 ? promedioReal : _metaActual.AportePorQuincena;
-
-            if (ritmoProyeccion <= 0)
-            {
-                LblEta.Text = " ⏸️ Define tu aporte para proyectar";
-                LblEta.Foreground = Brushes.Gray;
-                return;
-            }
-
-            double quincenasRestantes = Math.Ceiling((double)restante / (double)ritmoProyeccion);
-            double mesesRestantes = quincenasRestantes / 2.0;
-            double aniosRestantes = mesesRestantes / 12.0;
-
-            // 🔹 Formato inteligente según la escala
-            if (quincenasRestantes <= 2)
-                LblEta.Text = $" ✨ ¡Casi! ~{quincenasRestantes:F0} Q";
-            else if (mesesRestantes < 12)
-                LblEta.Text = $" ~{mesesRestantes:F1} meses";
             else
-                LblEta.Text = $" ~{aniosRestantes:F1} años ({mesesRestantes:F0} meses)";
-
-            // 🔹 Tooltip informativo (opcional)
-            LblEta.ToolTip = promedioReal > 0
-                ? $"Basado en tu promedio real: {promedioReal.ToString("C2")}/quincena"
-                : $"Basado en tu plan: {_metaActual.AportePorQuincena.ToString("C2")}/quincena";
-
-            LblEta.Foreground = Brushes.LightYellow;
+            {
+                LblEstadoMeta2027.Text = $"✨ Proyección estimada al 31/12/2027: {totalProyectado:C2}";
+                LblEstadoMeta2027.Foreground = Brushes.LightYellow;
+            }
 
             // === Historial ===
             DgHistorialAhorro.ItemsSource = _metaActual.Historial.OrderByDescending(h => h.Fecha).ToList();
@@ -429,15 +476,22 @@ namespace CalculadoraFiscalUI
                 Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_rutaMeta)!);
                 string json = System.Text.Json.JsonSerializer.Serialize(_metaActual, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
                 System.IO.File.WriteAllText(_rutaMeta, json, System.Text.Encoding.UTF8);
-                MessageBox.Show("Progreso de ahorro guardado", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Progreso de ahorro guardado correctamente", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex) { MessageBox.Show($"Error al guardar: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
 
-
         private void CargarMetaAhorro()
         {
-            if (!System.IO.File.Exists(_rutaMeta)) return;
+            if (!System.IO.File.Exists(_rutaMeta))
+            {
+                // Cargar valores por defecto solicitados por el usuario
+                TxtNombreMeta.Text = _metaActual.Nombre;
+                TxtAporteQ1.Text = _metaActual.AporteQ1.ToString();
+                TxtAporteQ2.Text = _metaActual.AporteQ2.ToString();
+                TxtMontoDecimo.Text = _metaActual.MontoDecimo.ToString();
+                return;
+            }
             try
             {
                 string json = System.IO.File.ReadAllText(_rutaMeta, System.Text.Encoding.UTF8);
@@ -446,99 +500,14 @@ namespace CalculadoraFiscalUI
                 {
                     _metaActual = meta;
                     TxtNombreMeta.Text = meta.Nombre;
-                    TxtMetaMonto.Text = meta.MontoObjetivo.ToString();
-                    TxtAporteMeta.Text = meta.AportePorQuincena.ToString();
+                    TxtMetaMonto.Text = meta.MontoObjetivo > 0 ? meta.MontoObjetivo.ToString() : "";
+                    TxtAporteQ1.Text = meta.AporteQ1 > 0 ? meta.AporteQ1.ToString() : "300";
+                    TxtAporteQ2.Text = meta.AporteQ2 > 0 ? meta.AporteQ2.ToString() : "350";
+                    TxtMontoDecimo.Text = meta.MontoDecimo > 0 ? meta.MontoDecimo.ToString() : "588";
                     ActualizarUIAhorro();
                 }
             }
-            catch { /* Ignorar si está corrupto, se crea uno nuevo */ }
-        }
-        #endregion
-        #region 🚗 Proyecto Auto
-        private ProyectoAuto _proyectoAuto = new();
-        private readonly string _rutaAuto = System.IO.Path.Combine(AppContext.BaseDirectory, "data", "proyecto_auto.json");
-
-        private void BtnActualizarAuto_Click(object sender, RoutedEventArgs e)
-        {
-            if (!decimal.TryParse(TxtFondoAuto.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal fondo) || fondo < 0)
-            { MessageBox.Show("Fondo actual inválido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-            if (!decimal.TryParse(TxtAporteAuto.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal aporte) || aporte < 0)
-            { MessageBox.Show("Aporte quincenal inválido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-
-            _proyectoAuto.FondoActual = fondo;
-            _proyectoAuto.AporteQuincenal = aporte;
-            CalcularEtaAuto();
-        }
-
-        private void BtnAgregarItemAuto_Click(object sender, RoutedEventArgs e)
-        {
-            string item = TxtItemAuto.Text.Trim();
-            if (string.IsNullOrWhiteSpace(item)) return;
-            if (!decimal.TryParse(TxtCostoItem.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal costo) || costo <= 0)
-            { MessageBox.Show("Costo inválido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
-
-            _proyectoAuto.Checklist.Add(new ItemChecklistAuto
-            {
-                Nombre = item,
-                CostoEstimado = costo,
-                EsPrioridad = ChkPrioridadAuto.IsChecked == true,
-                Completado = false
-            });
-
-            TxtItemAuto.Clear(); TxtCostoItem.Clear(); ChkPrioridadAuto.IsChecked = false;
-            CalcularEtaAuto();
-        }
-
-        private void CalcularEtaAuto()
-        {
-            decimal totalNecesario = _proyectoAuto.Checklist.Where(i => !i.Completado).Sum(i => i.CostoEstimado);
-            decimal pendiente = Math.Max(0, totalNecesario - _proyectoAuto.FondoActual);
-            LblNecesitaAuto.Text = $" {totalNecesario.ToString("C2")}";
-
-            if (pendiente <= 0) { LblEtaAuto.Text = " 🎉 ¡Fondo cubre todo!"; LblAlertaAuto.Text = ""; return; }
-            if (_proyectoAuto.AporteQuincenal <= 0) { LblEtaAuto.Text = " ⏸️ Define aporte"; LblAlertaAuto.Text = ""; return; }
-
-            double quincenas = Math.Ceiling((double)pendiente / (double)_proyectoAuto.AporteQuincenal);
-            double meses = quincenas / 2.0;
-            LblEtaAuto.Text = $" ~{meses:F1} meses ({quincenas:F0} Q)";
-
-            // 🔗 Validación contra disponible real de la quincena activa
-            decimal disponibleActual = decimal.Parse(LblSalarioDisponible.Text.Replace("$", "").Replace(" ", ""));
-            if (_proyectoAuto.AporteQuincenal > disponibleActual)
-                LblAlertaAuto.Text = "⚠️ Tu aporte supera el disponible de esta quincena";
-            else
-                LblAlertaAuto.Text = "";
-        }
-
-        private void BtnGuardarAuto_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_rutaAuto)!);
-                string json = System.Text.Json.JsonSerializer.Serialize(_proyectoAuto, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-                System.IO.File.WriteAllText(_rutaAuto, json, System.Text.Encoding.UTF8);
-                MessageBox.Show("Proyecto Auto guardado", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
-        }
-
-        private void CargarProyectoAuto()
-        {
-            if (!System.IO.File.Exists(_rutaAuto)) return;
-            try
-            {
-                string json = System.IO.File.ReadAllText(_rutaAuto, System.Text.Encoding.UTF8);
-                var data = System.Text.Json.JsonSerializer.Deserialize<ProyectoAuto>(json);
-                if (data != null)
-                {
-                    _proyectoAuto = data;
-                    TxtFondoAuto.Text = data.FondoActual.ToString();
-                    TxtAporteAuto.Text = data.AporteQuincenal.ToString();
-                    DgChecklistAuto.ItemsSource = data.Checklist;
-                    CalcularEtaAuto();
-                }
-            }
-            catch { }
+            catch { /* Ignorar si está corrupto */ }
         }
         #endregion
     }

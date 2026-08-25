@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -6,10 +6,14 @@ namespace CalculadoraFiscalUI.Models
 {
     public class MetaAhorro
     {
-        public string Nombre { get; set; } = "Mi Meta";
+        public string Nombre { get; set; } = "Meta Principal (Moto + Casa)";
         public decimal MontoObjetivo { get; set; }
         public decimal MontoActual { get; set; }
-        public decimal AportePorQuincena { get; set; }
+        public decimal AportePorQuincena { get; set; } = 325m; // Promedio o compatibilidad
+        public decimal AporteQ1 { get; set; } = 300m;
+        public decimal AporteQ2 { get; set; } = 350m;
+        public decimal MontoDecimo { get; set; } = 588m;
+        public DateTime FechaLimite { get; set; } = new DateTime(2027, 12, 31);
         public List<HistorialAhorro> Historial { get; set; } = new();
     }
 
@@ -19,5 +23,7 @@ namespace CalculadoraFiscalUI.Models
         public int Anio { get; set; }
         public int Quincena { get; set; }
         public decimal Monto { get; set; }
+        public string Tipo { get; set; } = "Quincenal"; // "Quincenal", "Décimo", "Extra"
+        public string MetaNombre { get; set; } = "General";
     }
 }
