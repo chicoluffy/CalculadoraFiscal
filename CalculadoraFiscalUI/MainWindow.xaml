@@ -210,23 +210,23 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Configuración de Meta y Plan -->
-                    <GroupBox Grid.Row="0" Header="⚔️ Define tu Misión &amp; Plan (Moto + Casa)" FontSize="13" FontWeight="Bold" Padding="12" Margin="0,0,0,12" BorderBrush="#6366F1">
+                    <!-- Configuración de Plan y Metas -->
+                    <GroupBox Grid.Row="0" Header="⚔️ Plan Quincenal de Ahorro &amp; Metas" FontSize="13" FontWeight="Bold" Padding="12" Margin="0,0,0,12" BorderBrush="#6366F1">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <!-- Fila 1: Nombre y Meta Total -->
+                            <!-- Fila 1: Nombre, Meta Total Calculada y Fecha -->
                             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
-                                <TextBlock Text="🏆 Meta:" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBox x:Name="TxtNombreMeta" Width="180" FontSize="12" Padding="5,4" Background="White" BorderBrush="#E5E7EB" 
-                                         ToolTip="Nombre de tu objetivo (ej: Motocicleta + Casa)"/>
+                                <TextBlock Text="🏆 Meta General:" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBox x:Name="TxtNombreMeta" Width="200" FontSize="12" Padding="5,4" Background="White" BorderBrush="#E5E7EB" 
+                                         ToolTip="Nombre de tu objetivo (ej: Casa + Moto)"/>
 
                                 <TextBlock Text="💰 Meta Total ($):" 
-                                           ToolTip="Monto total acumulado para completar la misión en Dic 2027" 
+                                           ToolTip="Suma automática de tus metas (Casa + Moto = $9,300)" 
                                            Margin="15,0,8,0" FontSize="12" VerticalAlignment="Center"/>     
-                                <TextBox x:Name="TxtMetaMonto" Width="110" FontSize="12" Padding="5,4" Background="White" BorderBrush="#E5E7EB"/>
+                                <TextBox x:Name="TxtMetaMonto" Width="100" FontSize="12" Padding="5,4" Background="#F3F4F6" BorderBrush="#E5E7EB" IsReadOnly="True" FontWeight="Bold"/>
 
                                 <TextBlock Text="📅 Fecha Límite:" Margin="15,0,8,0" FontSize="12" VerticalAlignment="Center"/>
                                 <TextBlock Text="Diciembre 2027 🎯" FontSize="12" FontWeight="Bold" Foreground="#4F46E5" VerticalAlignment="Center"/>
@@ -248,20 +248,22 @@
                         </Grid>
                     </GroupBox>
 
-                    <!-- Barra de Progreso RPG y Proyección a Dic 2027 -->
+                    <!-- Barra de Progreso RPG, Tarjetas por Cuenta y Proyección -->
                     <Border Grid.Row="1" Background="#1E293B" CornerRadius="10" Padding="15" Margin="0,0,0,12">
                         <StackPanel>
+                            <!-- Nivel y Porcentaje Global -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,8">
                                 <TextBlock x:Name="LblNivel" Text="🟢 Nivel 1: Novato" FontSize="15" FontWeight="Bold" Foreground="#38BDF8"/>
                                 <TextBlock x:Name="LblPorcentaje" Text="0%" FontSize="15" FontWeight="Bold" Foreground="#10B981" Margin="20,0,0,0"/>
                             </StackPanel>
 
-                            <ProgressBar x:Name="PgbProgreso" Height="22" Background="#334155" BorderBrush="#475569" BorderThickness="1" Foreground="#10B981" Margin="0,0,0,10">
+                            <!-- Barra General -->
+                            <ProgressBar x:Name="PgbProgreso" Height="18" Background="#334155" BorderBrush="#475569" BorderThickness="1" Foreground="#10B981" Margin="0,0,0,12">
                                 <ProgressBar.Template>
                                     <ControlTemplate TargetType="ProgressBar">
                                         <Grid>
-                                            <Border Background="{TemplateBinding Background}" CornerRadius="11" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"/>
-                                            <Border x:Name="PART_Indicator" CornerRadius="11" HorizontalAlignment="Left" Background="{TemplateBinding Foreground}">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="9" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"/>
+                                            <Border x:Name="PART_Indicator" CornerRadius="9" HorizontalAlignment="Left" Background="{TemplateBinding Foreground}">
                                                 <Border.Effect>
                                                     <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#10B981" Opacity="0.7"/>
                                                 </Border.Effect>
@@ -271,33 +273,86 @@
                                 </ProgressBar.Template>
                             </ProgressBar>
 
+                            <!-- 🏠 DESGLOSE DE CUENTAS / SUB-METAS (CASA & MOTO) -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Cuenta 1: Gastos Legales -->
+                                <Border Grid.Column="0" Background="#0F172A" CornerRadius="8" Padding="10" Margin="0,0,6,0" BorderBrush="#3B82F6" BorderThickness="1">
+                                    <StackPanel>
+                                        <TextBlock Text="🏠 Gastos Legales Casa" FontSize="11" FontWeight="Bold" Foreground="#60A5FA"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,4">
+                                            <TextBlock x:Name="LblSub1Monto" Text="$0 / $1,600" FontSize="11" Foreground="#F3F4F6" FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="LblSub1Pct" Text=" (0%)" FontSize="11" Foreground="#93C5FD"/>
+                                        </StackPanel>
+                                        <ProgressBar x:Name="PgbSub1" Height="8" Background="#1E293B" Foreground="#3B82F6" Value="0" Maximum="100"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Cuenta 2: Abono Inicial -->
+                                <Border Grid.Column="1" Background="#0F172A" CornerRadius="8" Padding="10" Margin="3,0,3,0" BorderBrush="#10B981" BorderThickness="1">
+                                    <StackPanel>
+                                        <TextBlock Text="🏠 Abono Inicial Casa" FontSize="11" FontWeight="Bold" Foreground="#34D399"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,4">
+                                            <TextBlock x:Name="LblSub2Monto" Text="$0 / $3,500" FontSize="11" Foreground="#F3F4F6" FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="LblSub2Pct" Text=" (0%)" FontSize="11" Foreground="#6EE7B7"/>
+                                        </StackPanel>
+                                        <ProgressBar x:Name="PgbSub2" Height="8" Background="#1E293B" Foreground="#10B981" Value="0" Maximum="100"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Cuenta 3: Moto -->
+                                <Border Grid.Column="2" Background="#0F172A" CornerRadius="8" Padding="10" Margin="6,0,0,0" BorderBrush="#A855F7" BorderThickness="1">
+                                    <StackPanel>
+                                        <TextBlock Text="🏍️ Moto (con ITBMS)" FontSize="11" FontWeight="Bold" Foreground="#C084FC"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,4">
+                                            <TextBlock x:Name="LblSub3Monto" Text="$0 / $4,200" FontSize="11" Foreground="#F3F4F6" FontWeight="SemiBold"/>
+                                            <TextBlock x:Name="LblSub3Pct" Text=" (0%)" FontSize="11" Foreground="#E9D5FF"/>
+                                        </StackPanel>
+                                        <ProgressBar x:Name="PgbSub3" Height="8" Background="#1E293B" Foreground="#A855F7" Value="0" Maximum="100"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
                             <!-- Acumulado y Proyección Dic 2027 -->
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,4">
                                 <TextBlock Text="💰 Acumulado:" FontSize="12" Foreground="#94A3B8"/>
                                 <TextBlock x:Name="LblActual" Text=" $0.00" FontSize="13" FontWeight="SemiBold" Foreground="#F8FAFC" Margin="5,0,15,0"/>
                                 <TextBlock Text="| 🚀 Proyectado a Dic 2027:" FontSize="12" Foreground="#94A3B8"/>
                                 <TextBlock x:Name="LblProyeccionDic2027" Text=" $0.00" FontSize="13" FontWeight="Bold" Foreground="#38BDF8" Margin="5,0,0,0"/>
                             </StackPanel>
-                            <TextBlock x:Name="LblEstadoMeta2027" Text="✨ Listo para evaluar tu proyección" HorizontalAlignment="Center" FontSize="11" FontStyle="Italic" Foreground="#FBBF24" Margin="0,4,0,0"/>
+                            <TextBlock x:Name="LblEstadoMeta2027" Text="✨ Listo para evaluar tu proyección" HorizontalAlignment="Center" FontSize="11" FontStyle="Italic" Foreground="#FBBF24" Margin="0,2,0,0"/>
                         </StackPanel>
                     </Border>
 
-                    <!-- Agregar Ahorro (Con Selector de Tipo) -->
+                    <!-- Agregar Ahorro (Con Selector de Tipo y Selector de Cuenta Destino) -->
                     <GroupBox Grid.Row="2" Header="💎 Registrar Depósito de Ahorro" FontSize="13" FontWeight="Bold" Padding="12" Margin="0,0,0,12" BorderBrush="#6366F1">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="Monto ($):" VerticalAlignment="Center" FontSize="12" Margin="0,0,5,0"/>
-                            <TextBox x:Name="TxtDepositoAhorro" Width="110" FontSize="13" Padding="6,4" Background="White" BorderBrush="#E5E7EB"/>
+                            <TextBox x:Name="TxtDepositoAhorro" Width="85" FontSize="12" Padding="5,4" Background="White" BorderBrush="#E5E7EB"/>
 
-                            <TextBlock Text="Tipo:" VerticalAlignment="Center" FontSize="12" Margin="12,0,5,0"/>
-                            <ComboBox x:Name="CmbTipoDeposito" Width="180" FontSize="12" Padding="4" SelectionChanged="CmbTipoDeposito_SelectionChanged">
+                            <TextBlock Text="Tipo:" VerticalAlignment="Center" FontSize="12" Margin="10,0,5,0"/>
+                            <ComboBox x:Name="CmbTipoDeposito" Width="145" FontSize="12" Padding="4" SelectionChanged="CmbTipoDeposito_SelectionChanged">
                                 <ComboBoxItem Content="1ra Quincena ($300)" Tag="Aporte Q1" IsSelected="True"/>
                                 <ComboBoxItem Content="2da Quincena ($350)" Tag="Aporte Q2"/>
                                 <ComboBoxItem Content="🎁 Décimo ($588)" Tag="Décimo"/>
                                 <ComboBoxItem Content="Depósito Extra" Tag="Extra"/>
                             </ComboBox>
 
-                            <Button Content="⬆️ Depositar" Click="BtnAgregarAhorro_Click" Width="100" Margin="15,0,0,0" Background="#8B5CF6" Foreground="White" FontSize="13" Cursor="Hand"/>
-                            <TextBlock x:Name="LblFeedback" Text="" Margin="15,0,0,0" FontSize="12" FontStyle="Italic" Foreground="#38BDF8" VerticalAlignment="Center"/>
+                            <TextBlock Text="Destino:" VerticalAlignment="Center" FontSize="12" Margin="10,0,5,0"/>
+                            <ComboBox x:Name="CmbDestinoDeposito" Width="200" FontSize="12" Padding="4">
+                                <ComboBoxItem Content="⚡ Auto (Casa Legales → Abono → Moto)" Tag="AUTO" IsSelected="True"/>
+                                <ComboBoxItem Content="🏠 Casa - Gastos Legales ($1,600)" Tag="SUB1"/>
+                                <ComboBoxItem Content="🏠 Casa - Abono Inicial ($3,500)" Tag="SUB2"/>
+                                <ComboBoxItem Content="🏍️ Moto (con ITBMS) ($4,200)" Tag="SUB3"/>
+                            </ComboBox>
+
+                            <Button Content="⬆️ Depositar" Click="BtnAgregarAhorro_Click" Width="95" Margin="12,0,0,0" Background="#8B5CF6" Foreground="White" FontSize="12" Cursor="Hand"/>
+                            <TextBlock x:Name="LblFeedback" Text="" Margin="12,0,0,0" FontSize="11" FontStyle="Italic" Foreground="#38BDF8" VerticalAlignment="Center"/>
                         </StackPanel>
                     </GroupBox>
 
@@ -305,8 +360,8 @@
                     <Border Grid.Row="3" Background="#F8FAFC" CornerRadius="8" BorderBrush="#E2E8F0" BorderThickness="1" Padding="10" Margin="0,0,0,12">
                         <DataGrid x:Name="DgHistorialAhorro" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" HeadersVisibility="Column" FontSize="11" RowHeight="26" Background="Transparent" BorderBrush="Transparent">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat=dd/MM/yyyy}" Width="85"/>
-                                <DataGridTextColumn Header="Periodo" Width="80">
+                                <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat=dd/MM/yyyy}" Width="80"/>
+                                <DataGridTextColumn Header="Periodo" Width="70">
                                     <DataGridTextColumn.Binding>
                                         <MultiBinding StringFormat="{}{0}-Q{1}">
                                             <Binding Path="Anio"/>
@@ -314,8 +369,9 @@
                                         </MultiBinding>
                                     </DataGridTextColumn.Binding>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="120"/>
-                                <DataGridTextColumn Header="Aporte" Binding="{Binding Monto, StringFormat=C2}" Width="100"/>
+                                <DataGridTextColumn Header="Destino" Binding="{Binding SubMetaNombre}" Width="160"/>
+                                <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="110"/>
+                                <DataGridTextColumn Header="Aporte" Binding="{Binding Monto, StringFormat=C2}" Width="90"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Border>
