@@ -318,10 +318,34 @@ namespace CalculadoraFiscalUI
         private MetaAhorro _metaActual = new();
         private readonly string _rutaMeta = System.IO.Path.Combine(AppContext.BaseDirectory, "data", "meta_ahorro.json");
 
+        private void AsegurarSubMetasPorDefecto()
+        {
+            if (_metaActual.SubMetas == null || _metaActual.SubMetas.Count == 0)
+            {
+                _metaActual.SubMetas = new List<SubMetaAhorro>
+                {
+                    new SubMetaAhorro { Nombre = "🏠 Casa - Gastos Legales", MontoObjetivo = 1600m, MontoActual = 0m, Icono = "🏠" },
+                    new SubMetaAhorro { Nombre = "🏠 Casa - Abono Inicial", MontoObjetivo = 3500m, MontoActual = 0m, Icono = "🏠" },
+                    new SubMetaAhorro { Nombre = "🏍️ Moto (con ITBMS)", MontoObjetivo = 4200m, MontoActual = 0m, Icono = "🏍️" }
+                };
+            }
+            else
+            {
+                // Asegurar que si faltan las 3 metas por defecto se agreguen
+                if (!_metaActual.SubMetas.Any(s => s.Nombre.Contains("Gastos Legales")))
+                    _metaActual.SubMetas.Add(new SubMetaAhorro { Nombre = "🏠 Casa - Gastos Legales", MontoObjetivo = 1600m, MontoActual = 0m, Icono = "🏠" });
+                if (!_metaActual.SubMetas.Any(s => s.Nombre.Contains("Abono Inicial")))
+                    _metaActual.SubMetas.Add(new SubMetaAhorro { Nombre = "🏠 Casa - Abono Inicial", MontoObjetivo = 3500m, MontoActual = 0m, Icono = "🏠" });
+                if (!_metaActual.SubMetas.Any(s => s.Nombre.Contains("Moto")))
+                    _metaActual.SubMetas.Add(new SubMetaAhorro { Nombre = "🏍️ Moto (con ITBMS)", MontoObjetivo = 4200m, MontoActual = 0m, Icono = "🏍️" });
+            }
+
+            _metaActual.MontoObjetivo = _metaActual.SubMetas.Sum(s => s.MontoObjetivo);
+            _metaActual.MontoActual = _metaActual.SubMetas.Sum(s => s.MontoActual);
+        }
+
         private void BtnFijarMeta_Click(object sender, RoutedEventArgs e)
         {
-            if (!decimal.TryParse(TxtMetaMonto.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal obj) || obj <= 0)
-            { MessageBox.Show("Define un objetivo válido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
             if (!decimal.TryParse(TxtAporteQ1.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal q1) || q1 < 0)
             { MessageBox.Show("Define un aporte de 1ra quincena válido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
             if (!decimal.TryParse(TxtAporteQ2.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal q2) || q2 < 0)
@@ -329,8 +353,7 @@ namespace CalculadoraFiscalUI
             if (!decimal.TryParse(TxtMontoDecimo.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal decimo) || decimo < 0)
             { MessageBox.Show("Define un monto de décimo válido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
 
-            _metaActual.Nombre = string.IsNullOrWhiteSpace(TxtNombreMeta.Text) ? "Meta Principal (Moto + Casa)" : TxtNombreMeta.Text;
-            _metaActual.MontoObjetivo = obj;
+            _metaActual.Nombre = string.IsNullOrWhiteSpace(TxtNombreMeta.Text) ? "Metas Combinadas (Casa + Moto)" : TxtNombreMeta.Text;
             _metaActual.AporteQ1 = q1;
             _metaActual.AporteQ2 = q2;
             _metaActual.MontoDecimo = decimo;
@@ -362,14 +385,67 @@ namespace CalculadoraFiscalUI
 
         private void BtnAgregarAhorro_Click(object sender, RoutedEventArgs e)
         {
-            if (_metaActual.MontoObjetivo == 0) { MessageBox.Show("Primero fija una meta u objetivo total", "Atención", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
+            AsegurarSubMetasPorDefecto();
+
             if (!decimal.TryParse(TxtDepositoAhorro.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal monto) || monto <= 0)
             { MessageBox.Show("Monto inválido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
 
             var comboTipo = CmbTipoDeposito.SelectedItem as ComboBoxItem;
             string tipoStr = comboTipo?.Tag?.ToString() ?? "Quincenal";
 
-            _metaActual.MontoActual += monto;
+            var comboDestino = CmbDestinoDeposito.SelectedItem as ComboBoxItem;
+            string destinoTag = comboDestino?.Tag?.ToString() ?? "AUTO";
+
+            string destinoNombre = "⚡ Auto (Casa -> Moto)";
+
+            if (destinoTag == "AUTO")
+            {
+                // Distribución automática por prioridad: Legales ($1600) -> Abono ($3500) -> Moto ($4200)
+                decimal rem = monto;
+                var sub1 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Gastos Legales"));
+                var sub2 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Abono Inicial"));
+                var sub3 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Moto"));
+
+                if (sub1 != null && sub1.MontoActual < sub1.MontoObjetivo && rem > 0)
+                {
+                    decimal faltante = sub1.MontoObjetivo - sub1.MontoActual;
+                    decimal aporte = Math.Min(rem, faltante);
+                    sub1.MontoActual += aporte;
+                    rem -= aporte;
+                }
+                if (sub2 != null && sub2.MontoActual < sub2.MontoObjetivo && rem > 0)
+                {
+                    decimal faltante = sub2.MontoObjetivo - sub2.MontoActual;
+                    decimal aporte = Math.Min(rem, faltante);
+                    sub2.MontoActual += aporte;
+                    rem -= aporte;
+                }
+                if (sub3 != null && rem > 0)
+                {
+                    sub3.MontoActual += rem;
+                    rem = 0;
+                }
+
+                destinoNombre = "⚡ Auto (Prioridad)";
+            }
+            else if (destinoTag == "SUB1")
+            {
+                var sub1 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Gastos Legales"));
+                if (sub1 != null) { sub1.MontoActual += monto; destinoNombre = sub1.Nombre; }
+            }
+            else if (destinoTag == "SUB2")
+            {
+                var sub2 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Abono Inicial"));
+                if (sub2 != null) { sub2.MontoActual += monto; destinoNombre = sub2.Nombre; }
+            }
+            else if (destinoTag == "SUB3")
+            {
+                var sub3 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Moto"));
+                if (sub3 != null) { sub3.MontoActual += monto; destinoNombre = sub3.Nombre; }
+            }
+
+            _metaActual.MontoActual = _metaActual.SubMetas.Sum(s => s.MontoActual);
+
             _metaActual.Historial.Insert(0, new HistorialAhorro
             {
                 Fecha = DateTime.Now,
@@ -377,18 +453,27 @@ namespace CalculadoraFiscalUI
                 Quincena = (CmbQuincena.SelectedItem as ComboBoxItem)?.Tag != null && int.TryParse(((ComboBoxItem)CmbQuincena.SelectedItem).Tag.ToString(), out int q) ? q : 1,
                 Monto = monto,
                 Tipo = tipoStr,
-                MetaNombre = _metaActual.Nombre
+                MetaNombre = _metaActual.Nombre,
+                SubMetaNombre = destinoNombre
             });
 
             TxtDepositoAhorro.Clear();
             ActualizarUIAhorro();
 
             double pct = (double)_metaActual.MontoActual / (double)_metaActual.MontoObjetivo * 100;
-            LblFeedback.Text = pct >= 100 ? "🏆 ¡META COMPLETADA! Eres legendario." : $"✨ +{monto:C0} ({tipoStr}) registrado.";
+            LblFeedback.Text = pct >= 100 ? "🏆 ¡TODAS LAS METAS COMPLETADAS! Excelente." : $"✨ +{monto:C0} ({tipoStr}) abonado a {destinoNombre}.";
         }
 
         private void ActualizarUIAhorro()
         {
+            AsegurarSubMetasPorDefecto();
+
+            _metaActual.MontoObjetivo = _metaActual.SubMetas.Sum(s => s.MontoObjetivo);
+            _metaActual.MontoActual = _metaActual.SubMetas.Sum(s => s.MontoActual);
+
+            TxtNombreMeta.Text = _metaActual.Nombre;
+            TxtMetaMonto.Text = $"{_metaActual.MontoObjetivo:C0}";
+
             double pct = _metaActual.MontoObjetivo > 0
                 ? Math.Min((double)_metaActual.MontoActual / (double)_metaActual.MontoObjetivo * 100, 100)
                 : 0;
@@ -396,6 +481,31 @@ namespace CalculadoraFiscalUI
             LblPorcentaje.Text = $"{pct:F1}%";
             LblActual.Text = $" {_metaActual.MontoActual:C2}";
             LblNivel.Text = ObtenerNivelRPG(pct);
+
+            // 🏠 Actualizar Tarjetas por Sub-meta
+            var sub1 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Gastos Legales"));
+            if (sub1 != null)
+            {
+                LblSub1Monto.Text = $"${sub1.MontoActual:N0} / ${sub1.MontoObjetivo:N0}";
+                LblSub1Pct.Text = $" ({sub1.Porcentaje:F0}%)";
+                PgbSub1.Value = sub1.Porcentaje;
+            }
+
+            var sub2 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Abono Inicial"));
+            if (sub2 != null)
+            {
+                LblSub2Monto.Text = $"${sub2.MontoActual:N0} / ${sub2.MontoObjetivo:N0}";
+                LblSub2Pct.Text = $" ({sub2.Porcentaje:F0}%)";
+                PgbSub2.Value = sub2.Porcentaje;
+            }
+
+            var sub3 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Moto"));
+            if (sub3 != null)
+            {
+                LblSub3Monto.Text = $"${sub3.MontoActual:N0} / ${sub3.MontoObjetivo:N0}";
+                LblSub3Pct.Text = $" ({sub3.Porcentaje:F0}%)";
+                PgbSub3.Value = sub3.Porcentaje;
+            }
 
             // 🚀 Proyección detallada a Diciembre 2027
             DateTime hoy = DateTime.Now;
@@ -413,15 +523,12 @@ namespace CalculadoraFiscalUI
                 int mEnd = (y == 2027) ? 12 : 12;
                 for (int m = mStart; m <= mEnd; m++)
                 {
-                    // 1ra Quincena
                     if (!(y == startYear && m == startMonth && startQ > 1))
                     {
                         cantQ1++;
                     }
-                    // 2da Quincena
                     cantQ2++;
 
-                    // Décimos (Abril, Agosto, Diciembre)
                     if ((m == 4 || m == 8 || m == 12) && !(y == startYear && m == startMonth && hoy.Day > 15))
                     {
                         cantDecimos++;
@@ -440,12 +547,12 @@ namespace CalculadoraFiscalUI
                 decimal dif = totalProyectado - _metaActual.MontoObjetivo;
                 if (dif >= 0)
                 {
-                    LblEstadoMeta2027.Text = $"🚀 Plan en curso: ¡Superas tu meta por {dif:C2} para Dic 2027! ({cantQ1} Q1 de ${_metaActual.AporteQ1:F0}, {cantQ2} Q2 de ${_metaActual.AporteQ2:F0}, {cantDecimos} Décimos de ${_metaActual.MontoDecimo:F0})";
+                    LblEstadoMeta2027.Text = $"🚀 Plan en curso: Superas tus 3 metas por {dif:C2} para Dic 2027 ({cantQ1} Q1 de ${_metaActual.AporteQ1:F0}, {cantQ2} Q2 de ${_metaActual.AporteQ2:F0}, {cantDecimos} Décimos de ${_metaActual.MontoDecimo:F0})";
                     LblEstadoMeta2027.Foreground = Brushes.LightGreen;
                 }
                 else
                 {
-                    LblEstadoMeta2027.Text = $"⚠️ Te faltarán {Math.Abs(dif):C2} para alcanzar la meta en Dic 2027 ({cantQ1} Q1, {cantQ2} Q2, {cantDecimos} Décimos restantes)";
+                    LblEstadoMeta2027.Text = $"⚠️ Te faltarán {Math.Abs(dif):C2} para completar los $9,300 en Dic 2027 ({cantQ1} Q1, {cantQ2} Q2, {cantDecimos} Décimos restantes)";
                     LblEstadoMeta2027.Foreground = Brushes.Orange;
                 }
             }
@@ -461,7 +568,7 @@ namespace CalculadoraFiscalUI
 
         private string ObtenerNivelRPG(double pct) => pct switch
         {
-            >= 100 => "🏆 Nivel MAX: Leyenda",
+            >= 100 => "🏆 Nivel MAX: Leyenda (Metas Logradas)",
             >= 80 => "🔥 Nivel 5: Experto",
             >= 60 => "🛡️ Nivel 4: Veterano",
             >= 40 => "⚔️ Nivel 3: Aventurero",
@@ -473,6 +580,7 @@ namespace CalculadoraFiscalUI
         {
             try
             {
+                AsegurarSubMetasPorDefecto();
                 Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_rutaMeta)!);
                 string json = System.Text.Json.JsonSerializer.Serialize(_metaActual, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
                 System.IO.File.WriteAllText(_rutaMeta, json, System.Text.Encoding.UTF8);
@@ -485,11 +593,13 @@ namespace CalculadoraFiscalUI
         {
             if (!System.IO.File.Exists(_rutaMeta))
             {
-                // Cargar valores por defecto solicitados por el usuario
+                AsegurarSubMetasPorDefecto();
                 TxtNombreMeta.Text = _metaActual.Nombre;
+                TxtMetaMonto.Text = $"{_metaActual.MontoObjetivo:C0}";
                 TxtAporteQ1.Text = _metaActual.AporteQ1.ToString();
                 TxtAporteQ2.Text = _metaActual.AporteQ2.ToString();
                 TxtMontoDecimo.Text = _metaActual.MontoDecimo.ToString();
+                ActualizarUIAhorro();
                 return;
             }
             try
@@ -499,8 +609,9 @@ namespace CalculadoraFiscalUI
                 if (meta != null)
                 {
                     _metaActual = meta;
+                    AsegurarSubMetasPorDefecto();
                     TxtNombreMeta.Text = meta.Nombre;
-                    TxtMetaMonto.Text = meta.MontoObjetivo > 0 ? meta.MontoObjetivo.ToString() : "";
+                    TxtMetaMonto.Text = $"{meta.MontoObjetivo:C0}";
                     TxtAporteQ1.Text = meta.AporteQ1 > 0 ? meta.AporteQ1.ToString() : "300";
                     TxtAporteQ2.Text = meta.AporteQ2 > 0 ? meta.AporteQ2.ToString() : "350";
                     TxtMontoDecimo.Text = meta.MontoDecimo > 0 ? meta.MontoDecimo.ToString() : "588";
