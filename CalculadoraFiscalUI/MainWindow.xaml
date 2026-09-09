@@ -160,16 +160,27 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- ➕ AGREGAR GASTO AL PERÍODO ACTIVO (Row 2) -->
-                    <GroupBox Grid.Row="2" Header="➕ Registrar Gasto" FontSize="12" FontWeight="Bold" Padding="10" Margin="0,0,0,10" BorderBrush="#E5E7EB">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBox x:Name="TxtNombreGasto" Width="220" FontSize="12" Padding="6,5" Background="White" BorderBrush="#CCCCCC" BorderThickness="1"
-                 ToolTip="Concepto del gasto (ej: Supermercado, Luz, Gasolina)"/>
-                            <TextBox x:Name="TxtMontoGasto" Width="120" FontSize="12" Padding="6,5" Margin="10,0,0,0" Background="White" BorderBrush="#CCCCCC" BorderThickness="1"
-                 ToolTip="Monto del gasto"/>
-                            <Button Content="Agregar +" Click="BtnAgregarGasto_Click" Width="90" Margin="10,0,0,0" Background="#3B82F6" Foreground="White" FontSize="12" Cursor="Hand"/>
-                            <Button Content="Limpiar Todo" Click="BtnLimpiarGastos_Click" Width="100" Margin="10,0,0,0" Background="#6B7280" Foreground="White" FontSize="12" Cursor="Hand"/>
-                        </StackPanel>
+                    <!-- ➕ AGREGAR GASTO Y ACCIONES DE PLANTILLA (Row 2) -->
+                    <GroupBox Grid.Row="2" Header="➕ Registrar Gasto / Plantilla Fija" FontSize="12" FontWeight="Bold" Padding="10" Margin="0,0,0,10" BorderBrush="#E5E7EB">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBox x:Name="TxtNombreGasto" Width="180" FontSize="12" Padding="6,5" Background="White" BorderBrush="#CCCCCC" BorderThickness="1"
+                                         ToolTip="Concepto del gasto (ej: Comida, Alquiler, WiFi)"/>
+                                <TextBox x:Name="TxtMontoGasto" Width="85" FontSize="12" Padding="6,5" Margin="8,0,0,0" Background="White" BorderBrush="#CCCCCC" BorderThickness="1"
+                                         ToolTip="Monto del gasto"/>
+                                <Button Content="Agregar +" Click="BtnAgregarGasto_Click" Width="80" Margin="8,0,0,0" Background="#3B82F6" Foreground="White" FontSize="12" Cursor="Hand"/>
+                                <Button Content="Limpiar" Click="BtnLimpiarGastos_Click" Width="70" Margin="6,0,0,0" Background="#6B7280" Foreground="White" FontSize="12" Cursor="Hand"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Content="📋 Cargar Plantilla Fija" Click="BtnCargarPlantilla_Click" Width="155" FontSize="12" Padding="4" Background="#8B5CF6" Foreground="White" Cursor="Hand" Margin="0,0,8,0" ToolTip="Carga los gastos fijos correspondientes a esta quincena"/>
+                                <Button Content="🚀 Auto-Rellenar Año" Click="BtnAutoRellenarAnio_Click" Width="145" FontSize="12" Padding="4" Background="#059669" Foreground="White" Cursor="Hand" ToolTip="Genera las 24 quincenas de este año con sus gastos fijos automáticos"/>
+                            </StackPanel>
+                        </Grid>
                     </GroupBox>
 
                     <!-- 📋 DATAGRID (Row 3) - Se actualiza automáticamente al contexto -->
@@ -201,6 +212,355 @@
                 </Grid>
             </TabItem>
             <TabItem Header="Ahorro" FontSize="14" Height="25" VerticalAlignment="Top">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="15">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Configuración de Plan y Metas -->
+                        <GroupBox Grid.Row="0" Header="⚔️ Plan Quincenal de Ahorro &amp; Metas" FontSize="13" FontWeight="Bold" Padding="12" Margin="0,0,0,12" BorderBrush="#6366F1">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <!-- Fila 1: Nombre, Meta Total Calculada y Fecha -->
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                                    <TextBlock Text="🏆 Meta General:" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBox x:Name="TxtNombreMeta" Width="180" FontSize="12" Padding="5,4" Background="White" BorderBrush="#E5E7EB" 
+                                             ToolTip="Nombre de tu objetivo (ej: Casa + Moto)"/>
+
+                                    <TextBlock Text="💰 Meta Total ($):" ToolTip="Suma automática de tus metas" Margin="12,0,5,0" FontSize="12" VerticalAlignment="Center"/>     
+                                    <TextBox x:Name="TxtMetaMonto" Width="85" FontSize="12" Padding="5,4" Background="#F3F4F6" BorderBrush="#E5E7EB" IsReadOnly="True" FontWeight="Bold"/>
+
+                                    <TextBlock Text="📅 Entrega / Límite:" Margin="12,0,5,0" FontSize="12" VerticalAlignment="Center"/>
+                                    <DatePicker x:Name="DtpFechaLimite" Width="125" FontSize="12" Padding="2" ToolTip="Fecha aproximada de entrega de la vivienda (ej: 30/10/2027)"/>
+                                </StackPanel>
+
+                                <!-- Fila 2: Plan Q1, Q2, Décimos y Ahorro Post-Entrega -->
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                                    <TextBlock Text="1ra Q ($):" ToolTip="Plan de ahorro base para la 1ra quincena" FontSize="12" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <TextBox x:Name="TxtAporteQ1" Width="55" FontSize="12" Padding="4" Text="300" Background="White" BorderBrush="#E5E7EB"/>
+
+                                    <TextBlock Text="2da Q ($):" ToolTip="Plan de ahorro base para la 2da quincena" Margin="8,0,5,0" FontSize="12" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="TxtAporteQ2" Width="55" FontSize="12" Padding="4" Text="350" Background="White" BorderBrush="#E5E7EB"/>
+
+                                    <TextBlock Text="🎁 Décimo ($):" ToolTip="Monto por cada décimo cuatrimestral (Abr, Ago, Dic)" Margin="8,0,5,0" FontSize="12" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="TxtMontoDecimo" Width="60" FontSize="12" Padding="4" Text="588" Background="White" BorderBrush="#E5E7EB"/>
+
+                                    <TextBlock Text="🏠 Post-Entrega ($/Q):" ToolTip="Capacidad de ahorro por quincena a partir de Noviembre 2027 (al pagar hipoteca)" Margin="10,0,5,0" FontSize="12" VerticalAlignment="Center" Foreground="#059669" FontWeight="SemiBold"/>
+                                    <TextBox x:Name="TxtAportePostEntrega" Width="60" FontSize="12" Padding="4" Text="200" Background="White" BorderBrush="#10B981" FontWeight="Bold"/>
+                                </StackPanel>
+
+                                <!-- Fila 3: Liberación de Gasto Futuro (Moto) -->
+                                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                                    <CheckBox x:Name="ChkActivarIncremento" Content="⚡ Fin pago moto actual:" IsChecked="True" FontSize="12" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#4F46E5"/>
+                                    <TextBlock Text="+$" FontSize="12" VerticalAlignment="Center" Margin="4,0,2,0"/>
+                                    <TextBox x:Name="TxtIncrementoMonto" Width="50" FontSize="12" Padding="3" Text="138" Background="White" BorderBrush="#E5E7EB" ToolTip="Monto liberado que pasa a ahorro fijo en ambas quincenas"/>
+                                    <TextBlock Text="/Q desde:" FontSize="12" VerticalAlignment="Center" Margin="6,0,4,0"/>
+                                    <DatePicker x:Name="DtpFechaIncremento" Width="115" FontSize="12" Padding="2" ToolTip="Quincena desde la cual aplica el monto adicional (ej: 15/04/2027)"/>
+                                </StackPanel>
+
+                                <!-- Fila 4: Vacaciones (Opcional) -->
+                                <StackPanel Grid.Row="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <CheckBox x:Name="ChkActivarVacaciones" Content="🌴 Vacaciones (opcional):" IsChecked="True" FontSize="12" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#059669"/>
+                                    <TextBlock Text="Mes ($):" FontSize="12" VerticalAlignment="Center" Margin="8,0,4,0"/>
+                                    <TextBox x:Name="TxtMontoVacaciones" Width="55" FontSize="12" Padding="3" Text="1776" Background="White" BorderBrush="#E5E7EB" ToolTip="Monto del mes completo de vacaciones (30 días en abril)"/>
+                                    <TextBlock Text="2026 (15 días $):" FontSize="12" VerticalAlignment="Center" Margin="10,0,4,0"/>
+                                    <TextBox x:Name="TxtMontoVacaciones2026" Width="55" FontSize="12" Padding="3" Text="888" Background="White" BorderBrush="#E5E7EB" ToolTip="Monto de 15 días restantes de vacaciones en 2026"/>
+
+                                    <Button Content="📌 Guardar Plan" Click="BtnFijarMeta_Click" Width="105" Margin="15,0,0,0" Background="#6366F1" Foreground="White" FontSize="12" Cursor="Hand"/>
+                                </StackPanel>
+                            </Grid>
+                        </GroupBox>
+
+                        <!-- Barra de Progreso RPG, Tarjetas por Cuenta y Proyección -->
+                        <Border Grid.Row="1" Background="#1E293B" CornerRadius="10" Padding="15" Margin="0,0,0,12">
+                            <StackPanel>
+                                <!-- Nivel y Porcentaje Global -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,8">
+                                    <TextBlock x:Name="LblNivel" Text="🟢 Nivel 1: Novato" FontSize="15" FontWeight="Bold" Foreground="#38BDF8"/>
+                                    <TextBlock x:Name="LblPorcentaje" Text="0%" FontSize="15" FontWeight="Bold" Foreground="#10B981" Margin="20,0,0,0"/>
+                                </StackPanel>
+
+                                <!-- Barra General -->
+                                <ProgressBar x:Name="PgbProgreso" Height="18" Background="#334155" BorderBrush="#475569" BorderThickness="1" Foreground="#10B981" Margin="0,0,0,12">
+                                    <ProgressBar.Template>
+                                        <ControlTemplate TargetType="ProgressBar">
+                                            <Grid>
+                                                <Border Background="{TemplateBinding Background}" CornerRadius="9" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"/>
+                                                <Border x:Name="PART_Indicator" CornerRadius="9" HorizontalAlignment="Left" Background="{TemplateBinding Foreground}">
+                                                    <Border.Effect>
+                                                        <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#10B981" Opacity="0.7"/>
+                                                    </Border.Effect>
+                                                </Border>
+                                            </Grid>
+                                        </ControlTemplate>
+                                    </ProgressBar.Template>
+                                </ProgressBar>
+
+                                <!-- 🏠 DESGLOSE DE CUENTAS / SUB-METAS (VIVIENDA, MOVILIDAD & AHORRO CONTINUO) -->
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Fila 1: Prioridad 1 - Vivienda ($6,950 Total) -->
+                                    <Grid Grid.Row="0" Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- SubMeta 1: Gastos Legales -->
+                                        <Border Grid.Column="0" Background="#0F172A" CornerRadius="8" Padding="7" Margin="0,0,3,0" BorderBrush="#3B82F6" BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="🏠 Legales + Colchón" FontSize="10" FontWeight="Bold" Foreground="#60A5FA"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,3">
+                                                    <TextBlock x:Name="LblSub1Monto" Text="$0 / $3,500" FontSize="10" Foreground="#F3F4F6" FontWeight="SemiBold"/>
+                                                    <TextBlock x:Name="LblSub1Pct" Text=" (0%)" FontSize="10" Foreground="#93C5FD"/>
+                                                </StackPanel>
+                                                <ProgressBar x:Name="PgbSub1" Height="6" Background="#1E293B" Foreground="#3B82F6" Value="0" Maximum="100"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- SubMeta 2: Abono Inicial -->
+                                        <Border Grid.Column="1" Background="#0F172A" CornerRadius="8" Padding="7" Margin="2,0,2,0" BorderBrush="#10B981" BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="🏠 Abono Inicial" FontSize="10" FontWeight="Bold" Foreground="#34D399"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,3">
+                                                    <TextBlock x:Name="LblSub2Monto" Text="$0 / $3,500" FontSize="10" Foreground="#F3F4F6" FontWeight="SemiBold"/>
+                                                    <TextBlock x:Name="LblSub2Pct" Text=" (0%)" FontSize="10" Foreground="#6EE7B7"/>
+                                                </StackPanel>
+                                                <ProgressBar x:Name="PgbSub2" Height="6" Background="#1E293B" Foreground="#10B981" Value="0" Maximum="100"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- SubMeta 3: Seguridad de Casa -->
+                                        <Border Grid.Column="2" Background="#0F172A" CornerRadius="8" Padding="7" Margin="2,0,2,0" BorderBrush="#F59E0B" BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="🛡️ Seguridad Casa" FontSize="10" FontWeight="Bold" Foreground="#FBBF24"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,3">
+                                                    <TextBlock x:Name="LblSub3Monto" Text="$0 / $1,500" FontSize="10" Foreground="#F3F4F6" FontWeight="SemiBold"/>
+                                                    <TextBlock x:Name="LblSub3Pct" Text=" (0%)" FontSize="10" Foreground="#FDE68A"/>
+                                                </StackPanel>
+                                                <ProgressBar x:Name="PgbSub3" Height="6" Background="#1E293B" Foreground="#F59E0B" Value="0" Maximum="100"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- SubMeta 8: Conexión Servicios & Trámites -->
+                                        <Border Grid.Column="3" Background="#0F172A" CornerRadius="8" Padding="7" Margin="3,0,0,0" BorderBrush="#06B6D4" BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="💡 Luz/Agua/Trámites" FontSize="10" FontWeight="Bold" Foreground="#22D3EE"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,3">
+                                                    <TextBlock x:Name="LblSub8Monto" Text="$0 / $350" FontSize="10" Foreground="#F3F4F6" FontWeight="SemiBold"/>
+                                                    <TextBlock x:Name="LblSub8Pct" Text=" (0%)" FontSize="10" Foreground="#67E8F9"/>
+                                                </StackPanel>
+                                                <ProgressBar x:Name="PgbSub8" Height="6" Background="#1E293B" Foreground="#06B6D4" Value="0" Maximum="100"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Fila 2: Prioridad 2 - Movilidad & Equipamiento ($7,800 Total) -->
+                                    <Grid Grid.Row="1" Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- SubMeta 4: Moto -->
+                                        <Border Grid.Column="0" Background="#0F172A" CornerRadius="8" Padding="8" Margin="0,0,4,0" BorderBrush="#A855F7" BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="🏍️ Moto (con ITBMS)" FontSize="11" FontWeight="Bold" Foreground="#C084FC"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,3">
+                                                    <TextBlock x:Name="LblSub4Monto" Text="$0 / $6,600" FontSize="11" Foreground="#F3F4F6" FontWeight="SemiBold"/>
+                                                    <TextBlock x:Name="LblSub4Pct" Text=" (0%)" FontSize="11" Foreground="#E9D5FF"/>
+                                                </StackPanel>
+                                                <ProgressBar x:Name="PgbSub4" Height="7" Background="#1E293B" Foreground="#A855F7" Value="0" Maximum="100"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- SubMeta 5: Muebles -->
+                                        <Border Grid.Column="1" Background="#0F172A" CornerRadius="8" Padding="8" Margin="4,0,0,0" BorderBrush="#EC4899" BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="🛋️ Fondo Inicial Muebles" FontSize="11" FontWeight="Bold" Foreground="#F472B6"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,3">
+                                                    <TextBlock x:Name="LblSub5Monto" Text="$0 / $1,200" FontSize="11" Foreground="#F3F4F6" FontWeight="SemiBold"/>
+                                                    <TextBlock x:Name="LblSub5Pct" Text=" (0%)" FontSize="11" Foreground="#FBCFE8"/>
+                                                </StackPanel>
+                                                <ProgressBar x:Name="PgbSub5" Height="7" Background="#1E293B" Foreground="#EC4899" Value="0" Maximum="100"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Fila 3: Prioridad 3 - Ahorro Continuo (Fondo Emergencia & Abono Capital) -->
+                                    <Grid Grid.Row="2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- SubMeta 6: Fondo de Emergencia -->
+                                        <Border Grid.Column="0" Background="#0F172A" CornerRadius="8" Padding="8" Margin="0,0,4,0" BorderBrush="#EF4444" BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="🚨 Fondo de Emergencia" FontSize="11" FontWeight="Bold" Foreground="#F87171"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,3">
+                                                    <TextBlock x:Name="LblSub6Monto" Text="$0 / $3,000" FontSize="11" Foreground="#F3F4F6" FontWeight="SemiBold"/>
+                                                    <TextBlock x:Name="LblSub6Pct" Text=" (0%)" FontSize="11" Foreground="#FCA5A5"/>
+                                                </StackPanel>
+                                                <ProgressBar x:Name="PgbSub6" Height="7" Background="#1E293B" Foreground="#EF4444" Value="0" Maximum="100"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- SubMeta 7: Abono a Capital Hipoteca -->
+                                        <Border Grid.Column="1" Background="#0F172A" CornerRadius="8" Padding="8" Margin="4,0,0,0" BorderBrush="#10B981" BorderThickness="1">
+                                            <StackPanel>
+                                                <TextBlock Text="📉 Abono a Capital Hipoteca" FontSize="11" FontWeight="Bold" Foreground="#34D399"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,3">
+                                                    <TextBlock x:Name="LblSub7Monto" Text="$0 (Acumulativo)" FontSize="11" Foreground="#F3F4F6" FontWeight="SemiBold"/>
+                                                    <TextBlock x:Name="LblSub7Pct" Text=" (Continuo)" FontSize="11" Foreground="#6EE7B7"/>
+                                                </StackPanel>
+                                                <ProgressBar x:Name="PgbSub7" Height="7" Background="#1E293B" Foreground="#10B981" Value="100" Maximum="100"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </Grid>
+
+                                <!-- Acumulado y Proyección Límite -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,4">
+                                    <TextBlock Text="💰 Acumulado:" FontSize="12" Foreground="#94A3B8"/>
+                                    <TextBlock x:Name="LblActual" Text=" $0.00" FontSize="13" FontWeight="SemiBold" Foreground="#F8FAFC" Margin="5,0,15,0"/>
+                                    <TextBlock x:Name="LblTituloProyeccion" Text="| 🚀 Proyectado al 30/10/2027:" FontSize="12" Foreground="#94A3B8"/>
+                                    <TextBlock x:Name="LblProyeccionDic2027" Text=" $0.00" FontSize="13" FontWeight="Bold" Foreground="#38BDF8" Margin="5,0,0,0"/>
+                                </StackPanel>
+                                <TextBlock x:Name="LblEstadoMeta2027" Text="✨ Listo para evaluar tu proyección" HorizontalAlignment="Center" FontSize="11" FontStyle="Italic" Foreground="#FBBF24" Margin="0,2,0,6"/>
+
+                                <!-- Desglose por Prioridades (Vivienda, Moto/Muebles, Ahorro Continuo) -->
+                                <Border Background="#0F172A" CornerRadius="6" Padding="10" Margin="0,4,0,0" BorderBrush="#334155" BorderThickness="1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" Margin="0,0,6,0">
+                                            <TextBlock Text="🏠 P1: Vivienda ($8,850)" FontSize="11" FontWeight="Bold" Foreground="#38BDF8"/>
+                                            <TextBlock x:Name="LblEstadoCasa" Text="Evaluando..." FontSize="10" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Margin="3,0,3,0">
+                                            <TextBlock Text="🏍️ P2: Moto+Muebles ($7,800)" FontSize="11" FontWeight="Bold" Foreground="#C084FC"/>
+                                            <TextBlock x:Name="LblEstadoMoto" Text="Evaluando..." FontSize="10" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Margin="6,0,0,0">
+                                            <TextBlock Text="🚨 P3: Ahorro Post-Entrega ($200/Q)" FontSize="11" FontWeight="Bold" Foreground="#F87171"/>
+                                            <TextBlock x:Name="LblEstadoAhorroContinuo" Text="Evaluando..." FontSize="10" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Agregar Ahorro (Con Selector de Tipo y Selector de Cuenta Destino) -->
+                        <GroupBox Grid.Row="2" Header="💎 Registrar Depósito de Ahorro" FontSize="13" FontWeight="Bold" Padding="12" Margin="0,0,0,12" BorderBrush="#6366F1">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Monto ($):" VerticalAlignment="Center" FontSize="12" Margin="0,0,5,0"/>
+                                <TextBox x:Name="TxtDepositoAhorro" Width="85" FontSize="12" Padding="5,4" Background="White" BorderBrush="#E5E7EB"/>
+
+                                <TextBlock Text="Tipo:" VerticalAlignment="Center" FontSize="12" Margin="10,0,5,0"/>
+                                <ComboBox x:Name="CmbTipoDeposito" Width="145" FontSize="12" Padding="4" SelectionChanged="CmbTipoDeposito_SelectionChanged">
+                                    <ComboBoxItem Content="1ra Quincena ($300)" Tag="Aporte Q1" IsSelected="True"/>
+                                    <ComboBoxItem Content="2da Quincena ($350)" Tag="Aporte Q2"/>
+                                    <ComboBoxItem Content="🎁 Décimo ($588)" Tag="Décimo"/>
+                                    <ComboBoxItem Content="🌴 Vacaciones ($1,776)" Tag="Vacaciones"/>
+                                    <ComboBoxItem Content="Depósito Extra" Tag="Extra"/>
+                                </ComboBox>
+
+                                <TextBlock Text="Destino:" VerticalAlignment="Center" FontSize="12" Margin="10,0,5,0"/>
+                                <ComboBox x:Name="CmbDestinoDeposito" Width="230" FontSize="12" Padding="4">
+                                    <ComboBoxItem Content="⚡ Auto (Cascada por Prioridad)" Tag="AUTO" IsSelected="True"/>
+                                    <ComboBoxItem Content="🏠 Casa - Gastos Legales + Colchón ($3,500)" Tag="SUB1"/>
+                                    <ComboBoxItem Content="🏠 Casa - Abono Inicial ($3,500)" Tag="SUB2"/>
+                                    <ComboBoxItem Content="🛡️ Seguridad de Casa ($1,500)" Tag="SUB3"/>
+                                    <ComboBoxItem Content="💡 Conexión Servicios &amp; Trámites ($350)" Tag="SUB8"/>
+                                    <ComboBoxItem Content="🏍️ Moto (con ITBMS) ($6,600)" Tag="SUB4"/>
+                                    <ComboBoxItem Content="🛋️ Fondo Inicial Muebles ($1,200)" Tag="SUB5"/>
+                                    <ComboBoxItem Content="🚨 Fondo de Emergencia ($3,000)" Tag="SUB6"/>
+                                    <ComboBoxItem Content="📉 Abono a Capital Hipoteca" Tag="SUB7"/>
+                                </ComboBox>
+
+                                <Button Content="⬆️ Depositar" Click="BtnAgregarAhorro_Click" Width="95" Margin="12,0,0,0" Background="#8B5CF6" Foreground="White" FontSize="12" Cursor="Hand"/>
+                                <TextBlock x:Name="LblFeedback" Text="" Margin="12,0,0,0" FontSize="11" FontStyle="Italic" Foreground="#38BDF8" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- Pestañas de Tablas/Grids (Historial Real vs. Tabla de Proyección Futura) -->
+                        <TabControl Grid.Row="3" Margin="0,0,0,12" FontSize="12">
+                            <!-- Tab 1: Historial de Depósitos Realizados -->
+                            <TabItem Header="📜 Historial Real (Depósitos)">
+                                <Border Background="#F8FAFC" CornerRadius="0,0,6,6" BorderBrush="#E2E8F0" BorderThickness="1" Padding="8">
+                                    <DataGrid x:Name="DgHistorialAhorro" Height="190" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" HeadersVisibility="Column" FontSize="11" RowHeight="28" Background="White" GridLinesVisibility="Horizontal">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat=dd/MM/yyyy}" Width="85"/>
+                                            <DataGridTextColumn Header="Periodo" Width="75">
+                                                <DataGridTextColumn.Binding>
+                                                    <MultiBinding StringFormat="{}{0}-Q{1}">
+                                                        <Binding Path="Anio"/>
+                                                        <Binding Path="Quincena"/>
+                                                    </MultiBinding>
+                                                </DataGridTextColumn.Binding>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="Destino" Binding="{Binding SubMetaNombre}" Width="190"/>
+                                            <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="110"/>
+                                            <DataGridTextColumn Header="Aporte" Binding="{Binding Monto, StringFormat=C2}" Width="100"/>
+                                            <DataGridTemplateColumn Header="Acción" Width="60">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Button Content="🗑️" Click="BtnEliminarDeposito_Click" Background="#EF4444" Foreground="White" BorderBrush="Transparent" Cursor="Hand" Tag="{Binding}" Width="40" Height="22" FontSize="11" ToolTip="Eliminar este depósito"/>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Border>
+                            </TabItem>
+
+                            <!-- Tab 2: Cronograma Quincenal de Proyección -->
+                            <TabItem Header="📅 Cronograma Quincenal Futuro">
+                                <Border Background="#F8FAFC" CornerRadius="0,0,6,6" BorderBrush="#E2E8F0" BorderThickness="1" Padding="8">
+                                    <DataGrid x:Name="DgProyeccionQuincenal" Height="220" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" HeadersVisibility="Column" FontSize="11" RowHeight="26" Background="White" GridLinesVisibility="Horizontal">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat=dd/MM/yyyy}" Width="90"/>
+                                            <DataGridTextColumn Header="Periodo" Binding="{Binding Periodo}" Width="75"/>
+                                            <DataGridTextColumn Header="Aporte Q ($)" Binding="{Binding AporteQuincenal, StringFormat=C2}" Width="105"/>
+                                            <DataGridTextColumn Header="Décimo ($)" Binding="{Binding MontoDecimo, StringFormat=C2}" Width="90"/>
+                                            <DataGridTextColumn Header="Vacaciones ($)" Binding="{Binding MontoVacaciones, StringFormat=C2}" Width="95"/>
+                                            <DataGridTextColumn Header="Total Q ($)" Binding="{Binding TotalQuincena, StringFormat=C2}" Width="100"/>
+                                            <DataGridTextColumn Header="Acumulado ($)" Binding="{Binding Acumulado, StringFormat=C2}" Width="110"/>
+                                            <DataGridTextColumn Header="Destino / Hito Meta" Binding="{Binding Hito}" Width="*"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Border>
+                            </TabItem>
+                        </TabControl>
+
+                        <Button Grid.Row="4" Content="💾 Guardar Progreso de Ahorro" Click="BtnGuardarAhorro_Click" HorizontalAlignment="Center" Padding="20,8" FontSize="13" Background="#059669" Foreground="White" Cursor="Hand" Margin="0,0,0,10"/>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ================= PESTAÑA 4: PROYECTOS & WISHLISTS ================= -->
+            <TabItem Header="🛠️ Proyectos &amp; Wishlists" FontSize="14" Height="25" VerticalAlignment="Top">
                 <Grid Margin="15">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -210,173 +570,130 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Configuración de Plan y Metas -->
-                    <GroupBox Grid.Row="0" Header="⚔️ Plan Quincenal de Ahorro &amp; Metas" FontSize="13" FontWeight="Bold" Padding="12" Margin="0,0,0,12" BorderBrush="#6366F1">
+                    <!-- Fila 0: Selector de Proyecto y Acciones de Plantilla -->
+                    <GroupBox Grid.Row="0" Header="📦 Gestor de Proyectos &amp; Plantillas Rápidas" FontSize="13" FontWeight="Bold" Padding="10" Margin="0,0,0,10" BorderBrush="#3B82F6">
                         <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            <!-- Fila 1: Nombre, Meta Total Calculada y Fecha -->
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
-                                <TextBlock Text="🏆 Meta General:" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBox x:Name="TxtNombreMeta" Width="200" FontSize="12" Padding="5,4" Background="White" BorderBrush="#E5E7EB" 
-                                         ToolTip="Nombre de tu objetivo (ej: Casa + Moto)"/>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                                <TextBlock Text="💰 Meta Total ($):" 
-                                           ToolTip="Suma automática de tus metas (Casa + Moto = $9,300)" 
-                                           Margin="15,0,8,0" FontSize="12" VerticalAlignment="Center"/>     
-                                <TextBox x:Name="TxtMetaMonto" Width="100" FontSize="12" Padding="5,4" Background="#F3F4F6" BorderBrush="#E5E7EB" IsReadOnly="True" FontWeight="Bold"/>
-
-                                <TextBlock Text="📅 Fecha Límite:" Margin="15,0,8,0" FontSize="12" VerticalAlignment="Center"/>
-                                <TextBlock Text="Diciembre 2027 🎯" FontSize="12" FontWeight="Bold" Foreground="#4F46E5" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Proyecto Activo:" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <ComboBox x:Name="CmbProyectos" Width="220" FontSize="12" SelectionChanged="CmbProyectos_SelectionChanged" DisplayMemberPath="Nombre"/>
+                                <Button Content="➕ Nuevo" Click="BtnNuevoProyecto_Click" Width="75" Margin="8,0,0,0" Background="#3B82F6" Foreground="White" FontSize="12" Cursor="Hand"/>
+                                <Button Content="🗑️ Eliminar" Click="BtnEliminarProyecto_Click" Width="85" Margin="6,0,0,0" Background="#EF4444" Foreground="White" FontSize="12" Cursor="Hand"/>
                             </StackPanel>
 
-                            <!-- Fila 2: Plan Q1, Q2 y Décimos -->
-                            <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="1ra Q ($):" ToolTip="Plan de ahorro para la 1ra quincena" FontSize="12" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                <TextBox x:Name="TxtAporteQ1" Width="70" FontSize="12" Padding="4" Text="300" Background="White" BorderBrush="#E5E7EB"/>
-
-                                <TextBlock Text="2da Q ($):" ToolTip="Plan de ahorro para la 2da quincena" Margin="12,0,5,0" FontSize="12" VerticalAlignment="Center"/>
-                                <TextBox x:Name="TxtAporteQ2" Width="70" FontSize="12" Padding="4" Text="350" Background="White" BorderBrush="#E5E7EB"/>
-
-                                <TextBlock Text="🎁 Décimo ($):" ToolTip="Monto por cada décimo cuatrimestral (Abr, Ago, Dic)" Margin="12,0,5,0" FontSize="12" VerticalAlignment="Center"/>
-                                <TextBox x:Name="TxtMontoDecimo" Width="75" FontSize="12" Padding="4" Text="588" Background="White" BorderBrush="#E5E7EB"/>
-
-                                <Button Content="📌 Guardar Plan" Click="BtnFijarMeta_Click" Width="105" Margin="15,0,0,0" Background="#6366F1" Foreground="White" FontSize="12" Cursor="Hand"/>
-                            </StackPanel>
+                            <WrapPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <TextBlock Text="⚡ Plantillas:" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="#6B7280"/>
+                                <Button Content="🏗️ Cuarto PC" Click="BtnPlantillaCuarto_Click" Width="105" FontSize="11" Padding="4" Background="#3B82F6" Foreground="White" Cursor="Hand" Margin="0,2,4,2" ToolTip="Carga construcción/adecuación del pequeño cuarto para PC"/>
+                                <Button Content="🛋️ Muebles Casa" Click="BtnPlantillaMuebles_Click" Width="115" FontSize="11" Padding="4" Background="#EC4899" Foreground="White" Cursor="Hand" Margin="0,2,4,2" ToolTip="Carga muebles: Cama Queen, Estufa, Aire Acondicionado, TV, Sillón compacto"/>
+                                <Button Content="🛡️ Seguridad Casa" Click="BtnPlantillaSeguridad_Click" Width="125" FontSize="11" Padding="4" Background="#F59E0B" Foreground="White" Cursor="Hand" Margin="0,2,4,2" ToolTip="Carga seguridad: Puerta blindada, Verjas ventanas francesas, Cámaras exteriores"/>
+                                <Button Content="🖥️ Armar PC" Click="BtnPlantillaPC_Click" Width="95" FontSize="11" Padding="4" Background="#8B5CF6" Foreground="White" Cursor="Hand" Margin="0,2,4,2" ToolTip="Carga componentes para armar PC Gaming"/>
+                                <Button Content="🏍️ Equipamiento Moto" Click="BtnPlantillaMoto_Click" Width="135" FontSize="11" Padding="4" Background="#059669" Foreground="White" Cursor="Hand" Margin="0,2,0,2" ToolTip="Carga lista de seguridad de moto (casco, botas, etc.)"/>
+                            </WrapPanel>
                         </Grid>
                     </GroupBox>
 
-                    <!-- Barra de Progreso RPG, Tarjetas por Cuenta y Proyección -->
-                    <Border Grid.Row="1" Background="#1E293B" CornerRadius="10" Padding="15" Margin="0,0,0,12">
-                        <StackPanel>
-                            <!-- Nivel y Porcentaje Global -->
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,8">
-                                <TextBlock x:Name="LblNivel" Text="🟢 Nivel 1: Novato" FontSize="15" FontWeight="Bold" Foreground="#38BDF8"/>
-                                <TextBlock x:Name="LblPorcentaje" Text="0%" FontSize="15" FontWeight="Bold" Foreground="#10B981" Margin="20,0,0,0"/>
+                    <!-- Fila 1: Tarjetas de Resumen Financiero del Proyecto -->
+                    <Border Grid.Row="1" Background="#1E293B" CornerRadius="8" Padding="12" Margin="0,0,0,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Presupuesto Estimado -->
+                            <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                <TextBlock Text="💰 Estimado Total" FontSize="11" Foreground="#94A3B8" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="LblProyectoEstimado" Text="$0.00" FontSize="16" FontWeight="Bold" Foreground="#38BDF8"/>
                             </StackPanel>
 
-                            <!-- Barra General -->
-                            <ProgressBar x:Name="PgbProgreso" Height="18" Background="#334155" BorderBrush="#475569" BorderThickness="1" Foreground="#10B981" Margin="0,0,0,12">
-                                <ProgressBar.Template>
-                                    <ControlTemplate TargetType="ProgressBar">
-                                        <Grid>
-                                            <Border Background="{TemplateBinding Background}" CornerRadius="9" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"/>
-                                            <Border x:Name="PART_Indicator" CornerRadius="9" HorizontalAlignment="Left" Background="{TemplateBinding Foreground}">
-                                                <Border.Effect>
-                                                    <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#10B981" Opacity="0.7"/>
-                                                </Border.Effect>
-                                            </Border>
-                                        </Grid>
-                                    </ControlTemplate>
-                                </ProgressBar.Template>
-                            </ProgressBar>
-
-                            <!-- 🏠 DESGLOSE DE CUENTAS / SUB-METAS (CASA & MOTO) -->
-                            <Grid Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-
-                                <!-- Cuenta 1: Gastos Legales -->
-                                <Border Grid.Column="0" Background="#0F172A" CornerRadius="8" Padding="10" Margin="0,0,6,0" BorderBrush="#3B82F6" BorderThickness="1">
-                                    <StackPanel>
-                                        <TextBlock Text="🏠 Gastos Legales Casa" FontSize="11" FontWeight="Bold" Foreground="#60A5FA"/>
-                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,4">
-                                            <TextBlock x:Name="LblSub1Monto" Text="$0 / $1,600" FontSize="11" Foreground="#F3F4F6" FontWeight="SemiBold"/>
-                                            <TextBlock x:Name="LblSub1Pct" Text=" (0%)" FontSize="11" Foreground="#93C5FD"/>
-                                        </StackPanel>
-                                        <ProgressBar x:Name="PgbSub1" Height="8" Background="#1E293B" Foreground="#3B82F6" Value="0" Maximum="100"/>
-                                    </StackPanel>
-                                </Border>
-
-                                <!-- Cuenta 2: Abono Inicial -->
-                                <Border Grid.Column="1" Background="#0F172A" CornerRadius="8" Padding="10" Margin="3,0,3,0" BorderBrush="#10B981" BorderThickness="1">
-                                    <StackPanel>
-                                        <TextBlock Text="🏠 Abono Inicial Casa" FontSize="11" FontWeight="Bold" Foreground="#34D399"/>
-                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,4">
-                                            <TextBlock x:Name="LblSub2Monto" Text="$0 / $3,500" FontSize="11" Foreground="#F3F4F6" FontWeight="SemiBold"/>
-                                            <TextBlock x:Name="LblSub2Pct" Text=" (0%)" FontSize="11" Foreground="#6EE7B7"/>
-                                        </StackPanel>
-                                        <ProgressBar x:Name="PgbSub2" Height="8" Background="#1E293B" Foreground="#10B981" Value="0" Maximum="100"/>
-                                    </StackPanel>
-                                </Border>
-
-                                <!-- Cuenta 3: Moto -->
-                                <Border Grid.Column="2" Background="#0F172A" CornerRadius="8" Padding="10" Margin="6,0,0,0" BorderBrush="#A855F7" BorderThickness="1">
-                                    <StackPanel>
-                                        <TextBlock Text="🏍️ Moto (con ITBMS)" FontSize="11" FontWeight="Bold" Foreground="#C084FC"/>
-                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,4">
-                                            <TextBlock x:Name="LblSub3Monto" Text="$0 / $4,200" FontSize="11" Foreground="#F3F4F6" FontWeight="SemiBold"/>
-                                            <TextBlock x:Name="LblSub3Pct" Text=" (0%)" FontSize="11" Foreground="#E9D5FF"/>
-                                        </StackPanel>
-                                        <ProgressBar x:Name="PgbSub3" Height="8" Background="#1E293B" Foreground="#A855F7" Value="0" Maximum="100"/>
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
-
-                            <!-- Acumulado y Proyección Dic 2027 -->
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,4">
-                                <TextBlock Text="💰 Acumulado:" FontSize="12" Foreground="#94A3B8"/>
-                                <TextBlock x:Name="LblActual" Text=" $0.00" FontSize="13" FontWeight="SemiBold" Foreground="#F8FAFC" Margin="5,0,15,0"/>
-                                <TextBlock Text="| 🚀 Proyectado a Dic 2027:" FontSize="12" Foreground="#94A3B8"/>
-                                <TextBlock x:Name="LblProyeccionDic2027" Text=" $0.00" FontSize="13" FontWeight="Bold" Foreground="#38BDF8" Margin="5,0,0,0"/>
+                            <!-- Invertido / Comprado -->
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                <TextBlock Text="✅ Comprado / Pagado" FontSize="11" Foreground="#94A3B8" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="LblProyectoComprado" Text="$0.00" FontSize="16" FontWeight="Bold" Foreground="#10B981"/>
                             </StackPanel>
-                            <TextBlock x:Name="LblEstadoMeta2027" Text="✨ Listo para evaluar tu proyección" HorizontalAlignment="Center" FontSize="11" FontStyle="Italic" Foreground="#FBBF24" Margin="0,2,0,0"/>
-                        </StackPanel>
+
+                            <!-- Pendiente -->
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                <TextBlock Text="⏳ Por Comprar" FontSize="11" Foreground="#94A3B8" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="LblProyectoPendiente" Text="$0.00" FontSize="16" FontWeight="Bold" Foreground="#F59E0B"/>
+                            </StackPanel>
+
+                            <!-- Avance Items -->
+                            <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                                <TextBlock Text="📊 Avance" FontSize="11" Foreground="#94A3B8" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="LblProyectoProgreso" Text="0 de 0 (0%)" FontSize="14" FontWeight="Bold" Foreground="#A855F7"/>
+                            </StackPanel>
+                        </Grid>
                     </Border>
 
-                    <!-- Agregar Ahorro (Con Selector de Tipo y Selector de Cuenta Destino) -->
-                    <GroupBox Grid.Row="2" Header="💎 Registrar Depósito de Ahorro" FontSize="13" FontWeight="Bold" Padding="12" Margin="0,0,0,12" BorderBrush="#6366F1">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="Monto ($):" VerticalAlignment="Center" FontSize="12" Margin="0,0,5,0"/>
-                            <TextBox x:Name="TxtDepositoAhorro" Width="85" FontSize="12" Padding="5,4" Background="White" BorderBrush="#E5E7EB"/>
+                    <!-- Fila 2: Formulario para Agregar Ítem -->
+                    <GroupBox Grid.Row="2" Header="➕ Agregar Ítem / Componente al Proyecto" FontSize="12" FontWeight="Bold" Padding="8" Margin="0,0,0,10" BorderBrush="#E5E7EB">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="130"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="110"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
 
-                            <TextBlock Text="Tipo:" VerticalAlignment="Center" FontSize="12" Margin="10,0,5,0"/>
-                            <ComboBox x:Name="CmbTipoDeposito" Width="145" FontSize="12" Padding="4" SelectionChanged="CmbTipoDeposito_SelectionChanged">
-                                <ComboBoxItem Content="1ra Quincena ($300)" Tag="Aporte Q1" IsSelected="True"/>
-                                <ComboBoxItem Content="2da Quincena ($350)" Tag="Aporte Q2"/>
-                                <ComboBoxItem Content="🎁 Décimo ($588)" Tag="Décimo"/>
-                                <ComboBoxItem Content="Depósito Extra" Tag="Extra"/>
+                            <TextBox x:Name="TxtItemCategoria" Grid.Column="0" FontSize="12" Padding="5,4" Margin="0,0,6,0" Background="White" BorderBrush="#CCCCCC" BorderThickness="1" ToolTip="Categoría (ej: Casco, GPU, Calzado, SSD)"/>
+                            <TextBox x:Name="TxtItemNombre" Grid.Column="1" FontSize="12" Padding="5,4" Margin="0,0,6,0" Background="White" BorderBrush="#CCCCCC" BorderThickness="1" ToolTip="Nombre / Modelo del artículo"/>
+                            <TextBox x:Name="TxtItemPrecioEst" Grid.Column="2" FontSize="12" Padding="5,4" Margin="0,0,6,0" Background="White" BorderBrush="#CCCCCC" BorderThickness="1" ToolTip="Precio Estimado ($)"/>
+                            <TextBox x:Name="TxtItemPrecioReal" Grid.Column="3" FontSize="12" Padding="5,4" Margin="0,0,6,0" Background="White" BorderBrush="#CCCCCC" BorderThickness="1" ToolTip="Precio Real / Pagado ($)"/>
+
+                            <ComboBox x:Name="CmbItemPrioridad" Grid.Column="4" FontSize="12" Padding="3" Margin="0,0,6,0">
+                                <ComboBoxItem Content="🔴 Urgente" Tag="Urgente"/>
+                                <ComboBoxItem Content="🟠 Alta" Tag="Alta"/>
+                                <ComboBoxItem Content="🟡 Media" Tag="Media" IsSelected="True"/>
+                                <ComboBoxItem Content="🟢 Opcional" Tag="Opcional"/>
                             </ComboBox>
 
-                            <TextBlock Text="Destino:" VerticalAlignment="Center" FontSize="12" Margin="10,0,5,0"/>
-                            <ComboBox x:Name="CmbDestinoDeposito" Width="200" FontSize="12" Padding="4">
-                                <ComboBoxItem Content="⚡ Auto (Casa Legales → Abono → Moto)" Tag="AUTO" IsSelected="True"/>
-                                <ComboBoxItem Content="🏠 Casa - Gastos Legales ($1,600)" Tag="SUB1"/>
-                                <ComboBoxItem Content="🏠 Casa - Abono Inicial ($3,500)" Tag="SUB2"/>
-                                <ComboBoxItem Content="🏍️ Moto (con ITBMS) ($4,200)" Tag="SUB3"/>
-                            </ComboBox>
-
-                            <Button Content="⬆️ Depositar" Click="BtnAgregarAhorro_Click" Width="95" Margin="12,0,0,0" Background="#8B5CF6" Foreground="White" FontSize="12" Cursor="Hand"/>
-                            <TextBlock x:Name="LblFeedback" Text="" Margin="12,0,0,0" FontSize="11" FontStyle="Italic" Foreground="#38BDF8" VerticalAlignment="Center"/>
-                        </StackPanel>
+                            <Button Grid.Column="5" Content="➕ Agregar Ítem" Click="BtnAgregarItemWishlist_Click" Width="110" Background="#3B82F6" Foreground="White" FontSize="12" Cursor="Hand"/>
+                        </Grid>
                     </GroupBox>
 
-                    <!-- Historial -->
-                    <Border Grid.Row="3" Background="#F8FAFC" CornerRadius="8" BorderBrush="#E2E8F0" BorderThickness="1" Padding="10" Margin="0,0,0,12">
-                        <DataGrid x:Name="DgHistorialAhorro" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" HeadersVisibility="Column" FontSize="11" RowHeight="26" Background="Transparent" BorderBrush="Transparent">
+                    <!-- Fila 3: DataGrid de Componentes -->
+                    <Border Grid.Row="3" Background="White" CornerRadius="6" BorderBrush="#E5E7EB" BorderThickness="1" Padding="5" Margin="0,0,0,10">
+                        <DataGrid x:Name="DgItemsWishlist" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" Background="White" FontSize="12" RowHeight="32">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat=dd/MM/yyyy}" Width="80"/>
-                                <DataGridTextColumn Header="Periodo" Width="70">
-                                    <DataGridTextColumn.Binding>
-                                        <MultiBinding StringFormat="{}{0}-Q{1}">
-                                            <Binding Path="Anio"/>
-                                            <Binding Path="Quincena"/>
-                                        </MultiBinding>
-                                    </DataGridTextColumn.Binding>
-                                </DataGridTextColumn>
-                                <DataGridTextColumn Header="Destino" Binding="{Binding SubMetaNombre}" Width="160"/>
-                                <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="110"/>
-                                <DataGridTextColumn Header="Aporte" Binding="{Binding Monto, StringFormat=C2}" Width="90"/>
+                                <DataGridCheckBoxColumn Header="Comprado" Binding="{Binding Completado, UpdateSourceTrigger=PropertyChanged}" Width="75">
+                                    <DataGridCheckBoxColumn.ElementStyle>
+                                        <Style TargetType="CheckBox">
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridCheckBoxColumn.ElementStyle>
+                                </DataGridCheckBoxColumn>
+                                <DataGridTextColumn Header="Categoría" Binding="{Binding Categoria}" Width="120"/>
+                                <DataGridTextColumn Header="Nombre / Modelo" Binding="{Binding Nombre}" Width="*"/>
+                                <DataGridTextColumn Header="Precio Est." Binding="{Binding PrecioEstimado, StringFormat=C2}" Width="110"/>
+                                <DataGridTextColumn Header="Precio Real" Binding="{Binding PrecioReal, StringFormat=C2}" Width="110"/>
+                                <DataGridTextColumn Header="Prioridad" Binding="{Binding Prioridad}" Width="100"/>
+                                <DataGridTextColumn Header="Estado" Binding="{Binding Estado}" Width="110"/>
+                                <DataGridTemplateColumn Header="Acciones" Width="70">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Content="🗑️" Click="BtnEliminarItemWishlist_Click" Background="#EF4444" Foreground="White" BorderBrush="Transparent" Cursor="Hand" Tag="{Binding}" Width="45" Height="24" FontSize="11" ToolTip="Eliminar este ítem"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Border>
 
-                    <Button Grid.Row="4" Content="💾 Guardar Progreso de Ahorro" Click="BtnGuardarAhorro_Click" HorizontalAlignment="Center" Padding="20,8" FontSize="13" Background="#059669" Foreground="White" Cursor="Hand"/>
+                    <!-- Fila 4: Guardar Proyectos -->
+                    <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button Content="💾 Guardar Proyectos &amp; Wishlists" Click="BtnGuardarProyectos_Click" Padding="20,8" FontSize="13" Background="#059669" Foreground="White" Cursor="Hand" Margin="0,0,10,0"/>
+                        <TextBlock x:Name="LblEstadoWishlist" Text="" VerticalAlignment="Center" FontSize="12" Foreground="#059669" FontStyle="Italic"/>
+                    </StackPanel>
                 </Grid>
             </TabItem>
         </TabControl>
