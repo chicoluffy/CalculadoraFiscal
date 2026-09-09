@@ -37,6 +37,7 @@ namespace CalculadoraFiscalUI
             InicializarPeriodos();
             CargarPeriodoPorDefecto();
             CargarMetaAhorro();
+            CargarProyectos();
         }
 
         #region INICIALIZACIÓN Y CARGA DE DATOS
@@ -208,6 +209,102 @@ namespace CalculadoraFiscalUI
                 MarcarComoModificado();
             }
         }
+        private List<Gasto> ObtenerPlantillaGastos(int anio, int mes, int quincena)
+        {
+            var gastos = new List<Gasto>();
+            // Moto ($138) expira automáticamente después de febrero de 2027 (a partir de marzo 2027)
+            bool incluirMoto = !(anio > 2027 || (anio == 2027 && mes > 2));
+
+            if (quincena == 1)
+            {
+                gastos.Add(new Gasto { Nombre = "🏠 Alquiler Casa", Monto = 75.00m, Mes = mes, QuincenaMes = 1 });
+                gastos.Add(new Gasto { Nombre = "🛒 Comida", Monto = 60.00m, Mes = mes, QuincenaMes = 1 });
+                gastos.Add(new Gasto { Nombre = "⛽ Gasolina", Monto = 30.00m, Mes = mes, QuincenaMes = 1 });
+                gastos.Add(new Gasto { Nombre = "📱 Data", Monto = 10.09m, Mes = mes, QuincenaMes = 1 });
+                if (incluirMoto)
+                {
+                    gastos.Add(new Gasto { Nombre = "🏍️ Cuota Moto", Monto = 138.00m, Mes = mes, QuincenaMes = 1 });
+                }
+                gastos.Add(new Gasto { Nombre = "🧺 Lavandería", Monto = 23.30m, Mes = mes, QuincenaMes = 1 });
+                gastos.Add(new Gasto { Nombre = "🐱 Gatos", Monto = 20.00m, Mes = mes, QuincenaMes = 1 });
+                gastos.Add(new Gasto { Nombre = "❤️ Mamá", Monto = 10.50m, Mes = mes, QuincenaMes = 1 });
+                gastos.Add(new Gasto { Nombre = "📶 WiFi", Monto = 9.99m, Mes = mes, QuincenaMes = 1 });
+                gastos.Add(new Gasto { Nombre = "💑 Salidas Novia", Monto = 120.00m, Mes = mes, QuincenaMes = 1 });
+                gastos.Add(new Gasto { Nombre = "🔧 Mantenimiento Moto", Monto = 10.00m, Mes = mes, QuincenaMes = 1 });
+            }
+            else
+            {
+                gastos.Add(new Gasto { Nombre = "🏠 Alquiler Casa", Monto = 75.00m, Mes = mes, QuincenaMes = 2 });
+                gastos.Add(new Gasto { Nombre = "🛒 Comida", Monto = 60.00m, Mes = mes, QuincenaMes = 2 });
+                gastos.Add(new Gasto { Nombre = "⛽ Gasolina", Monto = 30.00m, Mes = mes, QuincenaMes = 2 });
+                gastos.Add(new Gasto { Nombre = "📱 Data", Monto = 10.09m, Mes = mes, QuincenaMes = 2 });
+                if (incluirMoto)
+                {
+                    gastos.Add(new Gasto { Nombre = "🏍️ Cuota Moto", Monto = 138.00m, Mes = mes, QuincenaMes = 2 });
+                }
+                gastos.Add(new Gasto { Nombre = "🧺 Lavandería", Monto = 23.30m, Mes = mes, QuincenaMes = 2 });
+                gastos.Add(new Gasto { Nombre = "🐱 Gatos", Monto = 20.00m, Mes = mes, QuincenaMes = 2 });
+                gastos.Add(new Gasto { Nombre = "❤️ Mamá", Monto = 10.50m, Mes = mes, QuincenaMes = 2 });
+                gastos.Add(new Gasto { Nombre = "📶 WiFi", Monto = 23.99m, Mes = mes, QuincenaMes = 2 });
+                gastos.Add(new Gasto { Nombre = "💑 Salidas Novia", Monto = 120.00m, Mes = mes, QuincenaMes = 2 });
+                gastos.Add(new Gasto { Nombre = "🏋️ Gym", Monto = 38.00m, Mes = mes, QuincenaMes = 2 });
+                gastos.Add(new Gasto { Nombre = "🎵 YouTube Music", Monto = 5.00m, Mes = mes, QuincenaMes = 2 });
+            }
+
+            return gastos;
+        }
+
+        private void BtnCargarPlantilla_Click(object sender, RoutedEventArgs e)
+        {
+            if (CmbMesContexto.SelectedItem == null || CmbQMesContexto.SelectedItem == null) return;
+
+            int anio = int.TryParse(CmbAnio.SelectedItem?.ToString(), out int a) ? a : DateTime.Now.Year;
+            int mes = int.TryParse(((ComboBoxItem)CmbMesContexto.SelectedItem).Tag?.ToString(), out int m) ? m : 1;
+            int q = int.TryParse(((ComboBoxItem)CmbQMesContexto.SelectedItem).Tag?.ToString(), out int qTag) ? qTag : 1;
+
+            var paraEliminar = _listaGastos.Where(g => g.Mes == mes && g.QuincenaMes == q).ToList();
+            foreach (var gasto in paraEliminar)
+                _listaGastos.Remove(gasto);
+
+            var plantilla = ObtenerPlantillaGastos(anio, mes, q);
+            foreach (var gasto in plantilla)
+                _listaGastos.Add(gasto);
+
+            AplicarFiltroGastos();
+            MarcarComoModificado();
+            LblEstadoGuardado.Text = "Plantilla Fija Cargada";
+            LblEstadoGuardado.Foreground = Brushes.Blue;
+        }
+
+        private void BtnAutoRellenarAnio_Click(object sender, RoutedEventArgs e)
+        {
+            int anio = int.TryParse(CmbAnio.SelectedItem?.ToString(), out int a) ? a : DateTime.Now.Year;
+
+            if (MessageBox.Show($"¿Auto-rellenar las 24 quincenas del año {anio} con la plantilla de gastos fijos?",
+                "Confirmar Auto-Rellenado Anual", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            {
+                for (int m = 1; m <= 12; m++)
+                {
+                    for (int q = 1; q <= 2; q++)
+                    {
+                        var per = new PeriodoQuincenal { Anio = anio, Quincena = (m - 1) * 2 + q };
+                        var datosQuincena = new DatosQuincena
+                        {
+                            Periodo = per,
+                            SalarioFinal = SalarioFinalCalculado,
+                            Gastos = ObtenerPlantillaGastos(anio, m, q),
+                            FechaGuardado = DateTime.Now
+                        };
+                        _repo.Guardar(datosQuincena);
+                    }
+                }
+
+                CargarGastosDelPeriodo();
+                MessageBox.Show($"¡Las 24 quincenas del año {anio} han sido auto-rellenadas y guardadas exitosamente!",
+                    "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
         private void BtnLimpiarGastos_Click(object sender, RoutedEventArgs e)
         {
             if (CmbMesContexto.SelectedItem == null || CmbQMesContexto.SelectedItem == null) return;
@@ -219,7 +316,6 @@ namespace CalculadoraFiscalUI
             if (MessageBox.Show($"¿Eliminar TODOS los gastos de {nombreMes} ({(q == 1 ? "1ra" : "2da")})?",
                 "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
-                // ✅ FIX: ObservableCollection no tiene RemoveAll. UsamosToList() + foreach Remove()
                 var paraEliminar = _listaGastos.Where(g => g.Mes == mes && g.QuincenaMes == q).ToList();
                 foreach (var gasto in paraEliminar)
                     _listaGastos.Remove(gasto);
@@ -229,17 +325,13 @@ namespace CalculadoraFiscalUI
             }
         }
 
-
         private void CmbContexto_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // IsLoaded evita NullReferenceException durante la carga inicial de la ventana
             if (!IsLoaded) return;
             AplicarFiltroGastos();
         }
 
-
-
-           private void ActualizarResumenGastos(decimal totalGastos, decimal disponibleReal)
+        private void ActualizarResumenGastos(decimal totalGastos, decimal disponibleReal)
         {
             decimal pendiente = SalarioFinalCalculado - totalGastos;
             LblTotalGastos.Text = $" {totalGastos.ToString("C2")}";
@@ -247,6 +339,7 @@ namespace CalculadoraFiscalUI
             LblMensajeSaldo.Text = disponibleReal >= 0 ? "✨ Suficiente para gastos + ahorro" : "⚠️ Ajusta tu presupuesto";
             LblMensajeSaldo.Foreground = disponibleReal >= 0 ? System.Windows.Media.Brushes.Gray : System.Windows.Media.Brushes.Red;
         }
+
         private void MarcarComoModificado()
         {
             LblEstadoGuardado.Text = "⚠️ Cambios no guardados";
@@ -282,9 +375,16 @@ namespace CalculadoraFiscalUI
             if (datos == null)
             {
                 _listaGastos.Clear();
-                AplicarFiltroGastos(); // ← Cambiado
-                LblEstadoGuardado.Text = "Sin datos";
-                LblEstadoGuardado.Foreground = Brushes.Gray;
+                int anio = _periodoActual.Anio;
+                int mes = int.TryParse(((ComboBoxItem)CmbMesContexto.SelectedItem)?.Tag?.ToString(), out int m) ? m : 1;
+                int q = int.TryParse(((ComboBoxItem)CmbQMesContexto.SelectedItem)?.Tag?.ToString(), out int qTag) ? qTag : 1;
+
+                var plantilla = ObtenerPlantillaGastos(anio, mes, q);
+                foreach (var g in plantilla) _listaGastos.Add(g);
+
+                AplicarFiltroGastos();
+                LblEstadoGuardado.Text = "Plantilla Fija (Sin Guardar)";
+                LblEstadoGuardado.Foreground = Brushes.Orange;
                 return;
             }
 
@@ -292,7 +392,7 @@ namespace CalculadoraFiscalUI
             _listaGastos.Clear();
             foreach (var g in datos.Gastos) _listaGastos.Add(g);
 
-            AplicarFiltroGastos(); // ← Cambiado
+            AplicarFiltroGastos();
             LblEstadoGuardado.Text = "Cargado";
             LblEstadoGuardado.Foreground = Brushes.DarkGreen;
         }
@@ -320,24 +420,46 @@ namespace CalculadoraFiscalUI
 
         private void AsegurarSubMetasPorDefecto()
         {
-            if (_metaActual.SubMetas == null || _metaActual.SubMetas.Count == 0)
+            if (_metaActual.SubMetas == null) _metaActual.SubMetas = new List<SubMetaAhorro>();
+
+            var defaultMetas = new List<SubMetaAhorro>
             {
-                _metaActual.SubMetas = new List<SubMetaAhorro>
+                new SubMetaAhorro { Nombre = "🏠 Casa - Gastos Legales + Colchón", MontoObjetivo = 2354.26m, Icono = "🏠" },
+                new SubMetaAhorro { Nombre = "🏠 Casa - Abono Inicial", MontoObjetivo = 3500m, Icono = "🏠" },
+                new SubMetaAhorro { Nombre = "🛡️ Seguridad de Casa", MontoObjetivo = 1500m, Icono = "🛡️" },
+                new SubMetaAhorro { Nombre = "💡 Conexión Servicios & Trámites", MontoObjetivo = 350m, Icono = "💡" },
+                new SubMetaAhorro { Nombre = "🏍️ Moto (con ITBMS)", MontoObjetivo = 6600m, Icono = "🏍️" },
+                new SubMetaAhorro { Nombre = "🛋️ Fondo Inicial Muebles", MontoObjetivo = 1200m, Icono = "🛋️" },
+                new SubMetaAhorro { Nombre = "🚨 Fondo de Emergencia", MontoObjetivo = 3000m, Icono = "🚨" },
+                new SubMetaAhorro { Nombre = "📉 Abono a Capital Hipoteca", MontoObjetivo = 0m, Icono = "📉" }
+            };
+
+            foreach (var def in defaultMetas)
+            {
+                string key = def.Nombre switch
                 {
-                    new SubMetaAhorro { Nombre = "🏠 Casa - Gastos Legales", MontoObjetivo = 1600m, MontoActual = 0m, Icono = "🏠" },
-                    new SubMetaAhorro { Nombre = "🏠 Casa - Abono Inicial", MontoObjetivo = 3500m, MontoActual = 0m, Icono = "🏠" },
-                    new SubMetaAhorro { Nombre = "🏍️ Moto (con ITBMS)", MontoObjetivo = 4200m, MontoActual = 0m, Icono = "🏍️" }
+                    var n when n.Contains("Gastos Legales") => "Gastos Legales",
+                    var n when n.Contains("Abono Inicial") => "Abono Inicial",
+                    var n when n.Contains("Seguridad") => "Seguridad",
+                    var n when n.Contains("Servicios") => "Servicios",
+                    var n when n.Contains("Moto") => "Moto",
+                    var n when n.Contains("Muebles") => "Muebles",
+                    var n when n.Contains("Emergencia") => "Emergencia",
+                    var n when n.Contains("Capital") => "Capital",
+                    _ => def.Nombre.Split(' ')[1]
                 };
-            }
-            else
-            {
-                // Asegurar que si faltan las 3 metas por defecto se agreguen
-                if (!_metaActual.SubMetas.Any(s => s.Nombre.Contains("Gastos Legales")))
-                    _metaActual.SubMetas.Add(new SubMetaAhorro { Nombre = "🏠 Casa - Gastos Legales", MontoObjetivo = 1600m, MontoActual = 0m, Icono = "🏠" });
-                if (!_metaActual.SubMetas.Any(s => s.Nombre.Contains("Abono Inicial")))
-                    _metaActual.SubMetas.Add(new SubMetaAhorro { Nombre = "🏠 Casa - Abono Inicial", MontoObjetivo = 3500m, MontoActual = 0m, Icono = "🏠" });
-                if (!_metaActual.SubMetas.Any(s => s.Nombre.Contains("Moto")))
-                    _metaActual.SubMetas.Add(new SubMetaAhorro { Nombre = "🏍️ Moto (con ITBMS)", MontoObjetivo = 4200m, MontoActual = 0m, Icono = "🏍️" });
+
+                var existente = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains(key));
+                if (existente == null)
+                {
+                    _metaActual.SubMetas.Add(def);
+                }
+                else
+                {
+                    existente.Nombre = def.Nombre;
+                    existente.MontoObjetivo = def.MontoObjetivo;
+                    existente.Icono = def.Icono;
+                }
             }
 
             _metaActual.MontoObjetivo = _metaActual.SubMetas.Sum(s => s.MontoObjetivo);
@@ -353,14 +475,40 @@ namespace CalculadoraFiscalUI
             if (!decimal.TryParse(TxtMontoDecimo.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal decimo) || decimo < 0)
             { MessageBox.Show("Define un monto de décimo válido", "Error", MessageBoxButton.OK, MessageBoxImage.Warning); return; }
 
-            _metaActual.Nombre = string.IsNullOrWhiteSpace(TxtNombreMeta.Text) ? "Metas Combinadas (Casa + Moto)" : TxtNombreMeta.Text;
+            _metaActual.Nombre = string.IsNullOrWhiteSpace(TxtNombreMeta.Text) ? "Plan Casa, Movilidad y Ahorro Continuo" : TxtNombreMeta.Text;
             _metaActual.AporteQ1 = q1;
             _metaActual.AporteQ2 = q2;
             _metaActual.MontoDecimo = decimo;
             _metaActual.AportePorQuincena = (q1 + q2) / 2m;
 
+            if (decimal.TryParse(TxtAportePostEntrega.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal postQ) && postQ >= 0)
+                _metaActual.AporteQuincenalPostEntrega = postQ;
+
+            if (DtpFechaLimite.SelectedDate.HasValue)
+                _metaActual.FechaLimite = DtpFechaLimite.SelectedDate.Value;
+            else
+                _metaActual.FechaLimite = new DateTime(2027, 10, 30);
+
+            _metaActual.ActivarIncrementoFuturo = ChkActivarIncremento.IsChecked ?? false;
+
+            if (decimal.TryParse(TxtIncrementoMonto.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal inc) && inc >= 0)
+                _metaActual.IncrementoQuincenalFuturo = inc;
+
+            if (DtpFechaIncremento.SelectedDate.HasValue)
+                _metaActual.FechaInicioIncremento = DtpFechaIncremento.SelectedDate.Value;
+            else
+                _metaActual.FechaInicioIncremento = new DateTime(2027, 4, 15);
+
+            _metaActual.ActivarVacaciones = ChkActivarVacaciones.IsChecked ?? false;
+
+            if (decimal.TryParse(TxtMontoVacaciones.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal vac) && vac >= 0)
+                _metaActual.MontoVacaciones = vac;
+
+            if (decimal.TryParse(TxtMontoVacaciones2026.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal vac26) && vac26 >= 0)
+                _metaActual.MontoVacaciones2026 = vac26;
+
             ActualizarUIAhorro();
-            LblFeedback.Text = "Plan configurado. ¡Proyección a Dic 2027 actualizada!";
+            LblFeedback.Text = $"Plan configurado. ¡Proyección al {_metaActual.FechaLimite:dd/MM/yyyy} actualizada!";
         }
 
         private void CmbTipoDeposito_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -380,6 +528,9 @@ namespace CalculadoraFiscalUI
                 case "Décimo":
                     TxtDepositoAhorro.Text = _metaActual.MontoDecimo.ToString();
                     break;
+                case "Vacaciones":
+                    TxtDepositoAhorro.Text = _metaActual.MontoVacaciones.ToString();
+                    break;
             }
         }
 
@@ -396,52 +547,70 @@ namespace CalculadoraFiscalUI
             var comboDestino = CmbDestinoDeposito.SelectedItem as ComboBoxItem;
             string destinoTag = comboDestino?.Tag?.ToString() ?? "AUTO";
 
-            string destinoNombre = "⚡ Auto (Casa -> Moto)";
+            string destinoNombre = "⚡ Auto (Cascada por Prioridad)";
 
             if (destinoTag == "AUTO")
             {
-                // Distribución automática por prioridad: Legales ($1600) -> Abono ($3500) -> Moto ($4200)
+                // Cascadas por prioridad: Legales ($3500) -> Abono ($3500) -> Seguridad ($1500) -> Servicios ($350) -> Moto ($6600) -> Muebles ($1200) -> Emergencia ($3000) -> Abono Capital
                 decimal rem = monto;
-                var sub1 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Gastos Legales"));
-                var sub2 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Abono Inicial"));
-                var sub3 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Moto"));
+                string[] ordenMetas = new string[]
+                {
+                    "Gastos Legales",
+                    "Abono Inicial",
+                    "Seguridad de Casa",
+                    "Conexión Servicios",
+                    "Moto",
+                    "Fondo Inicial Muebles",
+                    "Fondo de Emergencia",
+                    "Abono a Capital"
+                };
 
-                if (sub1 != null && sub1.MontoActual < sub1.MontoObjetivo && rem > 0)
+                foreach (var metaPart in ordenMetas)
                 {
-                    decimal faltante = sub1.MontoObjetivo - sub1.MontoActual;
-                    decimal aporte = Math.Min(rem, faltante);
-                    sub1.MontoActual += aporte;
-                    rem -= aporte;
+                    if (rem <= 0) break;
+                    var sub = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains(metaPart));
+                    if (sub != null)
+                    {
+                        if (sub.MontoObjetivo > 0)
+                        {
+                            decimal faltante = Math.Max(0m, sub.MontoObjetivo - sub.MontoActual);
+                            if (faltante > 0)
+                            {
+                                decimal aporte = Math.Min(rem, faltante);
+                                sub.MontoActual += aporte;
+                                rem -= aporte;
+                            }
+                        }
+                        else
+                        {
+                            // Submeta sin tope (Abono a Capital)
+                            sub.MontoActual += rem;
+                            rem = 0;
+                        }
+                    }
                 }
-                if (sub2 != null && sub2.MontoActual < sub2.MontoObjetivo && rem > 0)
+                destinoNombre = "⚡ Auto (Prioridades)";
+            }
+            else
+            {
+                var subSel = destinoTag switch
                 {
-                    decimal faltante = sub2.MontoObjetivo - sub2.MontoActual;
-                    decimal aporte = Math.Min(rem, faltante);
-                    sub2.MontoActual += aporte;
-                    rem -= aporte;
-                }
-                if (sub3 != null && rem > 0)
-                {
-                    sub3.MontoActual += rem;
-                    rem = 0;
-                }
+                    "SUB1" => _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Gastos Legales")),
+                    "SUB2" => _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Abono Inicial")),
+                    "SUB3" => _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Seguridad de Casa")),
+                    "SUB8" => _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Conexión Servicios")),
+                    "SUB4" => _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Moto")),
+                    "SUB5" => _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Fondo Inicial Muebles")),
+                    "SUB6" => _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Fondo de Emergencia")),
+                    "SUB7" => _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Abono a Capital")),
+                    _ => null
+                };
 
-                destinoNombre = "⚡ Auto (Prioridad)";
-            }
-            else if (destinoTag == "SUB1")
-            {
-                var sub1 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Gastos Legales"));
-                if (sub1 != null) { sub1.MontoActual += monto; destinoNombre = sub1.Nombre; }
-            }
-            else if (destinoTag == "SUB2")
-            {
-                var sub2 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Abono Inicial"));
-                if (sub2 != null) { sub2.MontoActual += monto; destinoNombre = sub2.Nombre; }
-            }
-            else if (destinoTag == "SUB3")
-            {
-                var sub3 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Moto"));
-                if (sub3 != null) { sub3.MontoActual += monto; destinoNombre = sub3.Nombre; }
+                if (subSel != null)
+                {
+                    subSel.MontoActual += monto;
+                    destinoNombre = subSel.Nombre;
+                }
             }
 
             _metaActual.MontoActual = _metaActual.SubMetas.Sum(s => s.MontoActual);
@@ -474,6 +643,22 @@ namespace CalculadoraFiscalUI
             TxtNombreMeta.Text = _metaActual.Nombre;
             TxtMetaMonto.Text = $"{_metaActual.MontoObjetivo:C0}";
 
+            if (_metaActual.FechaLimite == default)
+                _metaActual.FechaLimite = new DateTime(2027, 10, 30);
+            if (_metaActual.FechaInicioIncremento == default)
+                _metaActual.FechaInicioIncremento = new DateTime(2027, 4, 15);
+            if (_metaActual.AporteQuincenalPostEntrega <= 0)
+                _metaActual.AporteQuincenalPostEntrega = 200m;
+
+            DtpFechaLimite.SelectedDate = _metaActual.FechaLimite;
+            ChkActivarIncremento.IsChecked = _metaActual.ActivarIncrementoFuturo;
+            TxtIncrementoMonto.Text = _metaActual.IncrementoQuincenalFuturo.ToString("0.##");
+            DtpFechaIncremento.SelectedDate = _metaActual.FechaInicioIncremento;
+            TxtAportePostEntrega.Text = _metaActual.AporteQuincenalPostEntrega.ToString("0.##");
+            ChkActivarVacaciones.IsChecked = _metaActual.ActivarVacaciones;
+            TxtMontoVacaciones.Text = _metaActual.MontoVacaciones.ToString("0.##");
+            TxtMontoVacaciones2026.Text = _metaActual.MontoVacaciones2026.ToString("0.##");
+
             double pct = _metaActual.MontoObjetivo > 0
                 ? Math.Min((double)_metaActual.MontoActual / (double)_metaActual.MontoObjetivo * 100, 100)
                 : 0;
@@ -482,88 +667,258 @@ namespace CalculadoraFiscalUI
             LblActual.Text = $" {_metaActual.MontoActual:C2}";
             LblNivel.Text = ObtenerNivelRPG(pct);
 
-            // 🏠 Actualizar Tarjetas por Sub-meta
-            var sub1 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Gastos Legales"));
-            if (sub1 != null)
+            // 🏠 Actualizar Tarjetas por Sub-meta (8 SubMetas)
+            void ActualizarCard(string key, TextBlock lblMonto, TextBlock lblPct, ProgressBar pgb)
             {
-                LblSub1Monto.Text = $"${sub1.MontoActual:N0} / ${sub1.MontoObjetivo:N0}";
-                LblSub1Pct.Text = $" ({sub1.Porcentaje:F0}%)";
-                PgbSub1.Value = sub1.Porcentaje;
+                var sub = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains(key));
+                if (sub != null && lblMonto != null && lblPct != null && pgb != null)
+                {
+                    lblMonto.Text = sub.MontoObjetivo > 0
+                        ? $"${sub.MontoActual:N0} / ${sub.MontoObjetivo:N0}"
+                        : $"${sub.MontoActual:N0}";
+                    lblPct.Text = sub.MontoObjetivo > 0 ? $" ({sub.Porcentaje:F0}%)" : "";
+                    pgb.Value = sub.MontoObjetivo > 0 ? sub.Porcentaje : 100;
+                }
             }
 
-            var sub2 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Abono Inicial"));
-            if (sub2 != null)
-            {
-                LblSub2Monto.Text = $"${sub2.MontoActual:N0} / ${sub2.MontoObjetivo:N0}";
-                LblSub2Pct.Text = $" ({sub2.Porcentaje:F0}%)";
-                PgbSub2.Value = sub2.Porcentaje;
-            }
+            ActualizarCard("Gastos Legales", LblSub1Monto, LblSub1Pct, PgbSub1);
+            ActualizarCard("Abono Inicial", LblSub2Monto, LblSub2Pct, PgbSub2);
+            ActualizarCard("Seguridad de Casa", LblSub3Monto, LblSub3Pct, PgbSub3);
+            ActualizarCard("Conexión Servicios", LblSub8Monto, LblSub8Pct, PgbSub8);
+            ActualizarCard("Moto", LblSub4Monto, LblSub4Pct, PgbSub4);
+            ActualizarCard("Fondo Inicial Muebles", LblSub5Monto, LblSub5Pct, PgbSub5);
+            ActualizarCard("Fondo de Emergencia", LblSub6Monto, LblSub6Pct, PgbSub6);
+            ActualizarCard("Abono a Capital", LblSub7Monto, LblSub7Pct, PgbSub7);
 
-            var sub3 = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre.Contains("Moto"));
-            if (sub3 != null)
-            {
-                LblSub3Monto.Text = $"${sub3.MontoActual:N0} / ${sub3.MontoObjetivo:N0}";
-                LblSub3Pct.Text = $" ({sub3.Porcentaje:F0}%)";
-                PgbSub3.Value = sub3.Porcentaje;
-            }
-
-            // 🚀 Proyección detallada a Diciembre 2027
+            // 🚀 Proyección detallada a Fecha Límite
             DateTime hoy = DateTime.Now;
+            DateTime limite = _metaActual.FechaLimite;
+
+            LblTituloProyeccion.Text = $"| 🚀 Proyectado al {limite:dd/MM/yyyy}:";
+
             int cantQ1 = 0;
             int cantQ2 = 0;
             int cantDecimos = 0;
+            decimal proyectadoQuincenas = 0m;
+            decimal proyectadoDecimos = 0m;
+            decimal proyectadoVacaciones = 0m;
 
             int startYear = hoy.Year;
             int startMonth = hoy.Month;
             int startQ = hoy.Day <= 15 ? 1 : 2;
 
-            for (int y = startYear; y <= 2027; y++)
+            var listaProyeccion = new List<FilaProyeccionAhorro>();
+            decimal acumuladoRunning = _metaActual.MontoActual;
+
+            // Recorrido quincenal ordenado desde la fecha actual hasta la Fecha Límite
+            for (int y = startYear; y <= limite.Year; y++)
             {
                 int mStart = (y == startYear) ? startMonth : 1;
-                int mEnd = (y == 2027) ? 12 : 12;
+                int mEnd = (y == limite.Year) ? limite.Month : 12;
+
                 for (int m = mStart; m <= mEnd; m++)
                 {
-                    if (!(y == startYear && m == startMonth && startQ > 1))
+                    for (int q = 1; q <= 2; q++)
                     {
-                        cantQ1++;
-                    }
-                    cantQ2++;
+                        if (y == startYear && m == startMonth && q < startQ) continue;
 
-                    if ((m == 4 || m == 8 || m == 12) && !(y == startYear && m == startMonth && hoy.Day > 15))
-                    {
-                        cantDecimos++;
+                        int diaQ = (q == 1) ? 15 : DateTime.DaysInMonth(y, m);
+                        DateTime dtQ = new DateTime(y, m, diaQ);
+
+                        if (dtQ > limite) break;
+
+                        decimal aporteBase = (q == 1) ? _metaActual.AporteQ1 : _metaActual.AporteQ2;
+                        decimal incrementoExtra = (_metaActual.ActivarIncrementoFuturo && dtQ >= _metaActual.FechaInicioIncremento)
+                            ? _metaActual.IncrementoQuincenalFuturo
+                            : 0m;
+
+                        decimal aporteQuincenaTotal = aporteBase + incrementoExtra;
+                        proyectadoQuincenas += aporteQuincenaTotal;
+
+                        if (q == 1) cantQ1++; else cantQ2++;
+
+                        decimal decimoEstePeriodo = 0m;
+                        if (q == 1 && (m == 4 || m == 8 || m == 12) && dtQ <= limite)
+                        {
+                            cantDecimos++;
+                            decimoEstePeriodo = _metaActual.MontoDecimo;
+                            proyectadoDecimos += decimoEstePeriodo;
+                        }
+
+                        decimal vacacionesEstePeriodo = 0m;
+                        if (_metaActual.ActivarVacaciones && q == 1 && dtQ <= limite)
+                        {
+                            if (y == 2026 && m == _metaActual.MesVacaciones2026)
+                            {
+                                vacacionesEstePeriodo = _metaActual.MontoVacaciones2026;
+                                proyectadoVacaciones += vacacionesEstePeriodo;
+                            }
+                            else if (y > 2026 && m == _metaActual.MesVacacionesAnual)
+                            {
+                                vacacionesEstePeriodo = _metaActual.MontoVacaciones;
+                                proyectadoVacaciones += vacacionesEstePeriodo;
+                            }
+                        }
+
+                        acumuladoRunning += (aporteQuincenaTotal + decimoEstePeriodo + vacacionesEstePeriodo);
+
+                        string hito = "🏠 Gastos Legales + Colchón";
+                        if (acumuladoRunning >= 18504.26m)
+                            hito = "📉 Abono a Capital Hipoteca";
+                        else if (acumuladoRunning >= 15504.26m)
+                            hito = "🚨 Fondo de Emergencia";
+                        else if (acumuladoRunning >= 14304.26m)
+                            hito = "🛋️ Fondo Inicial Muebles";
+                        else if (acumuladoRunning >= 7704.26m)
+                            hito = "🏍️ Moto (con ITBMS)";
+                        else if (acumuladoRunning >= 7354.26m)
+                            hito = "💡 Conexión Servicios & Trámites";
+                        else if (acumuladoRunning >= 5854.26m)
+                            hito = "🛡️ Seguridad de Casa";
+                        else if (acumuladoRunning >= 2354.26m)
+                            hito = "🏠 Abono Inicial Casa";
+
+                        listaProyeccion.Add(new FilaProyeccionAhorro
+                        {
+                            Fecha = dtQ,
+                            Periodo = $"{y}-Q{q}",
+                            AporteQuincenal = aporteQuincenaTotal,
+                            MontoDecimo = decimoEstePeriodo,
+                            MontoVacaciones = vacacionesEstePeriodo,
+                            Acumulado = acumuladoRunning,
+                            Hito = hito
+                        });
                     }
                 }
             }
 
-            decimal proyectadoQuincenas = (cantQ1 * _metaActual.AporteQ1) + (cantQ2 * _metaActual.AporteQ2);
-            decimal proyectadoDecimos = cantDecimos * _metaActual.MontoDecimo;
-            decimal totalProyectado = _metaActual.MontoActual + proyectadoQuincenas + proyectadoDecimos;
+            DgProyeccionQuincenal.ItemsSource = listaProyeccion;
 
+            decimal totalProyectado = _metaActual.MontoActual + proyectadoQuincenas + proyectadoDecimos + proyectadoVacaciones;
             LblProyeccionDic2027.Text = $" {totalProyectado:C2}";
 
-            if (_metaActual.MontoObjetivo > 0)
+            // === Evaluación de Prioridades: Vivienda ($7,704.26) vs. Moto+Muebles ($7,800) vs. Fondo Emergencia ($3,000) ===
+            decimal metaViviendaTotal = 7704.26m; // Legales + Colchón ($2,354.26) + Abono ($3,500) + Seguridad ($1,500) + Servicios ($350)
+            decimal metaMotoMueblesTotal = 7800m; // Moto ($6,600) + Muebles ($1,200)
+            decimal metaEmergenciaTotal = 3000m; // Fondo de Emergencia
+
+            if (totalProyectado >= metaViviendaTotal)
             {
-                decimal dif = totalProyectado - _metaActual.MontoObjetivo;
-                if (dif >= 0)
+                LblEstadoCasa.Text = $"✅ ¡100% CUBIERTA! Acumulas {totalProyectado:C0} al {limite:dd/MM/yyyy} (superas los ${metaViviendaTotal:N0} de Legales, Abono, Seguridad y Servicios).";
+
+                decimal sobranteParaMoto = totalProyectado - metaViviendaTotal;
+
+                // Simulación Post-Entrega Dual (Moto+Muebles y Emergencia)
+                DateTime dtSimMoto = limite;
+                DateTime dtSimEmergencia = limite;
+                decimal acumuladoPostMoto = sobranteParaMoto;
+                decimal acumuladoPostEmergencia = sobranteParaMoto;
+                int qExtraMoto = 0;
+                int qExtraEmergencia = 0;
+                decimal metaTotalGeneral = metaMotoMueblesTotal + metaEmergenciaTotal; // $10,800 sobrante total requerido
+
+                while (acumuladoPostEmergencia < metaTotalGeneral)
                 {
-                    LblEstadoMeta2027.Text = $"🚀 Plan en curso: Superas tus 3 metas por {dif:C2} para Dic 2027 ({cantQ1} Q1 de ${_metaActual.AporteQ1:F0}, {cantQ2} Q2 de ${_metaActual.AporteQ2:F0}, {cantDecimos} Décimos de ${_metaActual.MontoDecimo:F0})";
+                    qExtraEmergencia++;
+                    if (dtSimEmergencia.Day <= 15)
+                    {
+                        dtSimEmergencia = new DateTime(dtSimEmergencia.Year, dtSimEmergencia.Month, DateTime.DaysInMonth(dtSimEmergencia.Year, dtSimEmergencia.Month));
+                    }
+                    else
+                    {
+                        int nMonth = dtSimEmergencia.Month == 12 ? 1 : dtSimEmergencia.Month + 1;
+                        int nYear = dtSimEmergencia.Month == 12 ? dtSimEmergencia.Year + 1 : dtSimEmergencia.Year;
+                        dtSimEmergencia = new DateTime(nYear, nMonth, 15);
+                    }
+
+                    int qSim = dtSimEmergencia.Day <= 15 ? 1 : 2;
+                    decimal aAporte = _metaActual.AporteQuincenalPostEntrega > 0 ? _metaActual.AporteQuincenalPostEntrega : 200m;
+                    decimal aporteExtra = aAporte;
+
+                    if (qSim == 1 && (dtSimEmergencia.Month == 4 || dtSimEmergencia.Month == 8 || dtSimEmergencia.Month == 12))
+                    {
+                        aporteExtra += _metaActual.MontoDecimo;
+                    }
+                    if (_metaActual.ActivarVacaciones && qSim == 1 && dtSimEmergencia.Month == _metaActual.MesVacacionesAnual)
+                    {
+                        aporteExtra += _metaActual.MontoVacaciones;
+                    }
+
+                    if (acumuladoPostMoto < metaMotoMueblesTotal)
+                    {
+                        acumuladoPostMoto += aporteExtra;
+                        dtSimMoto = dtSimEmergencia;
+                        qExtraMoto = qExtraEmergencia;
+                    }
+
+                    acumuladoPostEmergencia += aporteExtra;
+                }
+
+                if (sobranteParaMoto >= metaMotoMueblesTotal)
+                {
+                    decimal excedenteAhorroContinuo = sobranteParaMoto - metaMotoMueblesTotal;
+                    LblEstadoMoto.Text = $"✅ ¡100% CUBIERTAS! Moto ($6.6k) y Muebles ($1.2k) listos al {limite:dd/MM/yyyy}.";
+                    LblEstadoAhorroContinuo.Text = $"🚀 Excedente de ${excedenteAhorroContinuo:N0} pasa a Fondo de Emergencia.\n🎯 Emergencia ($3k) se completa el {dtSimEmergencia:dd/MM/yyyy} ({qExtraEmergencia} Qs post-entrega).";
+                    LblEstadoMeta2027.Text = $"🚀 Plan Excelente: Superas tus metas principales por ${excedenteAhorroContinuo:N0} al {limite:dd/MM/yyyy}.";
                     LblEstadoMeta2027.Foreground = Brushes.LightGreen;
                 }
                 else
                 {
-                    LblEstadoMeta2027.Text = $"⚠️ Te faltarán {Math.Abs(dif):C2} para completar los $9,300 en Dic 2027 ({cantQ1} Q1, {cantQ2} Q2, {cantDecimos} Décimos restantes)";
+                    decimal pctMoto = (sobranteParaMoto / metaMotoMueblesTotal) * 100m;
+                    decimal faltanteMoto = metaMotoMueblesTotal - sobranteParaMoto;
+
+                    LblEstadoMoto.Text = $"⚠️ Acumularás ${sobranteParaMoto:N0} ({pctMoto:F0}%) al {limite:dd/MM/yyyy}.\n🎯 Moto + Muebles se completan el {dtSimMoto:dd/MM/yyyy} ({qExtraMoto} Qs post-entrega a ${_metaActual.AporteQuincenalPostEntrega:N0}/Q).";
+                    LblEstadoAhorroContinuo.Text = $"✨ A partir del {dtSimMoto:dd/MM/yyyy}, el ahorro pasa a Fondo de Emergencia ($3k), completándose el {dtSimEmergencia:dd/MM/yyyy} ({qExtraEmergencia} Qs post-entrega).";
+                    LblEstadoMeta2027.Text = $"🏠 Vivienda 100% asegurada. 🏍️ Moto+Muebles listos en {dtSimMoto:MMMM yyyy}.";
                     LblEstadoMeta2027.Foreground = Brushes.Orange;
                 }
             }
             else
             {
-                LblEstadoMeta2027.Text = $"✨ Proyección estimada al 31/12/2027: {totalProyectado:C2}";
-                LblEstadoMeta2027.Foreground = Brushes.LightYellow;
+                decimal faltanteCasa = metaViviendaTotal - totalProyectado;
+                LblEstadoCasa.Text = $"⚠️ Te faltarían ${faltanteCasa:N0} para completar los $8,850 de la Vivienda al {limite:dd/MM/yyyy}.";
+                LblEstadoMoto.Text = "❌ Aplazada. Toda la prioridad financiera se enfoca en la Vivienda.";
+                LblEstadoAhorroContinuo.Text = "⏳ En espera de completar la vivienda y movilidad.";
+                LblEstadoMeta2027.Text = $"⚠️ Faltan ${faltanteCasa:C0} para la meta de la vivienda al {limite:dd/MM/yyyy}. Recorta gastos o ajusta el aporte.";
+                LblEstadoMeta2027.Foreground = Brushes.Red;
             }
 
             // === Historial ===
             DgHistorialAhorro.ItemsSource = _metaActual.Historial.OrderByDescending(h => h.Fecha).ToList();
+        }
+
+        private void BtnEliminarDeposito_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is HistorialAhorro item)
+            {
+                if (MessageBox.Show($"¿Eliminar el depósito de {item.Monto:C2} ({item.SubMetaNombre})?",
+                    "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                {
+                    _metaActual.Historial.Remove(item);
+
+                    var sub = _metaActual.SubMetas.FirstOrDefault(s => s.Nombre == item.SubMetaNombre);
+                    if (sub != null)
+                    {
+                        sub.MontoActual = Math.Max(0m, sub.MontoActual - item.Monto);
+                    }
+                    else
+                    {
+                        decimal aRestar = item.Monto;
+                        foreach (var s in _metaActual.SubMetas.AsEnumerable().Reverse())
+                        {
+                            if (s.MontoActual > 0 && aRestar > 0)
+                            {
+                                decimal des = Math.Min(s.MontoActual, aRestar);
+                                s.MontoActual -= des;
+                                aRestar -= des;
+                            }
+                        }
+                    }
+
+                    _metaActual.MontoActual = _metaActual.SubMetas.Sum(s => s.MontoActual);
+                    ActualizarUIAhorro();
+                }
+            }
         }
 
         private string ObtenerNivelRPG(double pct) => pct switch
@@ -581,6 +936,18 @@ namespace CalculadoraFiscalUI
             try
             {
                 AsegurarSubMetasPorDefecto();
+                if (DtpFechaLimite.SelectedDate.HasValue) _metaActual.FechaLimite = DtpFechaLimite.SelectedDate.Value;
+                _metaActual.ActivarIncrementoFuturo = ChkActivarIncremento.IsChecked ?? false;
+                if (decimal.TryParse(TxtIncrementoMonto.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal inc))
+                    _metaActual.IncrementoQuincenalFuturo = inc;
+                if (DtpFechaIncremento.SelectedDate.HasValue) _metaActual.FechaInicioIncremento = DtpFechaIncremento.SelectedDate.Value;
+
+                _metaActual.ActivarVacaciones = ChkActivarVacaciones.IsChecked ?? false;
+                if (decimal.TryParse(TxtMontoVacaciones.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal vac))
+                    _metaActual.MontoVacaciones = vac;
+                if (decimal.TryParse(TxtMontoVacaciones2026.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal vac26))
+                    _metaActual.MontoVacaciones2026 = vac26;
+
                 Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_rutaMeta)!);
                 string json = System.Text.Json.JsonSerializer.Serialize(_metaActual, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
                 System.IO.File.WriteAllText(_rutaMeta, json, System.Text.Encoding.UTF8);
@@ -615,10 +982,438 @@ namespace CalculadoraFiscalUI
                     TxtAporteQ1.Text = meta.AporteQ1 > 0 ? meta.AporteQ1.ToString() : "300";
                     TxtAporteQ2.Text = meta.AporteQ2 > 0 ? meta.AporteQ2.ToString() : "350";
                     TxtMontoDecimo.Text = meta.MontoDecimo > 0 ? meta.MontoDecimo.ToString() : "588";
+                    TxtMontoVacaciones.Text = meta.MontoVacaciones > 0 ? meta.MontoVacaciones.ToString() : "888";
+                    TxtMontoVacaciones2026.Text = meta.MontoVacaciones2026 > 0 ? meta.MontoVacaciones2026.ToString() : "444";
+                    ChkActivarVacaciones.IsChecked = meta.ActivarVacaciones;
                     ActualizarUIAhorro();
                 }
             }
             catch { /* Ignorar si está corrupto */ }
+        }
+        #endregion
+
+        #region PROYECTOS & WISHLISTS
+        private ObservableCollection<ProyectoWishlist> _listaProyectos = new();
+        private ProyectoWishlist? _proyectoSeleccionado = null;
+        private readonly string _rutaProyectos = System.IO.Path.Combine(AppContext.BaseDirectory, "data", "proyectos_wishlist.json");
+
+        private void CargarProyectos()
+        {
+            try
+            {
+                if (System.IO.File.Exists(_rutaProyectos))
+                {
+                    string json = System.IO.File.ReadAllText(_rutaProyectos, System.Text.Encoding.UTF8);
+                    var lista = System.Text.Json.JsonSerializer.Deserialize<List<ProyectoWishlist>>(json);
+                    if (lista != null && lista.Count > 0)
+                    {
+                        _listaProyectos = new ObservableCollection<ProyectoWishlist>(lista);
+                    }
+                }
+            }
+            catch { /* Ignorar si está corrupto */ }
+
+            if (_listaProyectos.Count == 0)
+            {
+                CargarPlantillasIniciales();
+            }
+
+            CmbProyectos.ItemsSource = _listaProyectos;
+            if (_listaProyectos.Count > 0)
+            {
+                CmbProyectos.SelectedIndex = 0;
+            }
+        }
+
+        private void CargarPlantillasIniciales()
+        {
+            _listaProyectos.Clear();
+
+            // Proyecto 1: Equipamiento Moto
+            var proyMoto = new ProyectoWishlist
+            {
+                Nombre = "🏍️ Equipamiento Moto",
+                Icono = "🏍️",
+                Descripcion = "Casco certificado, botas, chaqueta y equipo de protección"
+            };
+            proyMoto.Items.Add(new ItemWishlist { Categoria = "Seguridad", Nombre = "Casco Certificado (ECE 22.06 / DOT)", PrecioEstimado = 250m, Prioridad = "🔴 Urgente", Estado = "⏳ Pendiente" });
+            proyMoto.Items.Add(new ItemWishlist { Categoria = "Calzado", Nombre = "Botas de Protección para Moto", PrecioEstimado = 160m, Prioridad = "🔴 Urgente", Estado = "⏳ Pendiente" });
+            proyMoto.Items.Add(new ItemWishlist { Categoria = "Protección", Nombre = "Chaqueta / Chamarra con Protecciones", PrecioEstimado = 180m, Prioridad = "🟠 Alta", Estado = "⏳ Pendiente" });
+            proyMoto.Items.Add(new ItemWishlist { Categoria = "Accesorios", Nombre = "Guantes Reforzados Kevlar/Cuero", PrecioEstimado = 55m, Prioridad = "🟠 Alta", Estado = "⏳ Pendiente" });
+            proyMoto.Items.Add(new ItemWishlist { Categoria = "Tecnología", Nombre = "Intercomunicador Bluetooth para Casco", PrecioEstimado = 90m, Prioridad = "🟡 Media", Estado = "⏳ Pendiente" });
+            proyMoto.Items.Add(new ItemWishlist { Categoria = "Mantenimiento", Nombre = "Impermeable / Capote de Lluvia", PrecioEstimado = 45m, Prioridad = "🟡 Media", Estado = "⏳ Pendiente" });
+
+            // Proyecto 2: Armar PC Gaming
+            var proyPC = new ProyectoWishlist
+            {
+                Nombre = "🖥️ Armar PC Gaming",
+                Icono = "🖥️",
+                Descripcion = "Componentes para armado de PC de alto rendimiento"
+            };
+            proyPC.Items.Add(new ItemWishlist { Categoria = "Procesador", Nombre = "CPU (ej. Ryzen 7 / Intel i7)", PrecioEstimado = 280m, Prioridad = "🔴 Urgente", Estado = "⏳ Pendiente" });
+            proyPC.Items.Add(new ItemWishlist { Categoria = "Tarjeta de Video", Nombre = "GPU (ej. RTX 4070 Super / RX 7800 XT)", PrecioEstimado = 600m, Prioridad = "🔴 Urgente", Estado = "⏳ Pendiente" });
+            proyPC.Items.Add(new ItemWishlist { Categoria = "Placa Base", Nombre = "Motherboard B650 / Z790 WiFi", PrecioEstimado = 170m, Prioridad = "🟠 Alta", Estado = "⏳ Pendiente" });
+            proyPC.Items.Add(new ItemWishlist { Categoria = "Memoria RAM", Nombre = "RAM 32GB DDR5 (2x16GB 6000MHz)", PrecioEstimado = 110m, Prioridad = "🟠 Alta", Estado = "⏳ Pendiente" });
+            proyPC.Items.Add(new ItemWishlist { Categoria = "Almacenamiento", Nombre = "SSD NVMe M.2 2TB PCIe 4.0", PrecioEstimado = 130m, Prioridad = "🟠 Alta", Estado = "⏳ Pendiente" });
+            proyPC.Items.Add(new ItemWishlist { Categoria = "Fuente", Nombre = "Fuente de Poder 750W 80+ Gold", PrecioEstimado = 100m, Prioridad = "🟠 Alta", Estado = "⏳ Pendiente" });
+            proyPC.Items.Add(new ItemWishlist { Categoria = "Gabinete / Cooler", Nombre = "Gabinete Mesh + Enfriamiento Líquido 240mm", PrecioEstimado = 120m, Prioridad = "🟡 Media", Estado = "⏳ Pendiente" });
+            proyPC.Items.Add(new ItemWishlist { Categoria = "Monitor", Nombre = "Monitor 27\" 1440p 165Hz IPS", PrecioEstimado = 230m, Prioridad = "🟡 Media", Estado = "⏳ Pendiente" });
+
+            // Proyecto 3: Remodelación Cuarto PC
+            var proyCuarto = new ProyectoWishlist
+            {
+                Nombre = "🏗️ Construcción Cuarto PC",
+                Icono = "🏗️",
+                Descripcion = "Materiales y adecuación de pequeño cuarto para espacio personal y PC"
+            };
+            proyCuarto.Items.Add(new ItemWishlist { Categoria = "Materiales", Nombre = "Paneles de Gypsum / Paredes / Bloques", PrecioEstimado = 350m, Prioridad = "🔴 Urgente", Estado = "⏳ Pendiente" });
+            proyCuarto.Items.Add(new ItemWishlist { Categoria = "Electricidad", Nombre = "Cableado Eléctrico & Tomacorrientes dedicados", PrecioEstimado = 120m, Prioridad = "🔴 Urgente", Estado = "⏳ Pendiente" });
+            proyCuarto.Items.Add(new ItemWishlist { Categoria = "Mano de Obra", Nombre = "Instalación / Trabajo de Construcción", PrecioEstimado = 300m, Prioridad = "🟠 Alta", Estado = "⏳ Pendiente" });
+            proyCuarto.Items.Add(new ItemWishlist { Categoria = "Acabados", Nombre = "Pintura e Iluminación LED", PrecioEstimado = 80m, Prioridad = "🟡 Media", Estado = "⏳ Pendiente" });
+
+            // Proyecto 4: Muebles & Casa
+            var proyMuebles = new ProyectoWishlist
+            {
+                Nombre = "🛋️ Muebles & Electrodomésticos",
+                Icono = "🛋️",
+                Descripcion = "Equipamiento básico de hogar: Cama Queen, Estufa, Aire, TV, Sillón"
+            };
+            proyMuebles.Items.Add(new ItemWishlist { Categoria = "Dormitorio", Nombre = "🛏️ Cama Grande Queen Size", PrecioEstimado = 350m, Prioridad = "🔴 Urgente", Estado = "⏳ Pendiente" });
+            proyMuebles.Items.Add(new ItemWishlist { Categoria = "Cocina", Nombre = "🍳 Estufa de Cocina", PrecioEstimado = 220m, Prioridad = "🔴 Urgente", Estado = "⏳ Pendiente" });
+            proyMuebles.Items.Add(new ItemWishlist { Categoria = "Climatización", Nombre = "❄️ Aire Acondicionado (Inverter)", PrecioEstimado = 350m, Prioridad = "🟠 Alta", Estado = "⏳ Pendiente" });
+            proyMuebles.Items.Add(new ItemWishlist { Categoria = "Entretenimiento", Nombre = "📺 Televisor Smart TV", PrecioEstimado = 280m, Prioridad = "🟡 Media", Estado = "⏳ Pendiente" });
+            proyMuebles.Items.Add(new ItemWishlist { Categoria = "Sala", Nombre = "🛋️ Sillón Pequeño / Compacto (Económico/Inflable)", PrecioEstimado = 60m, Prioridad = "🟢 Opcional", Estado = "⏳ Pendiente" });
+
+            // Proyecto 5: Seguridad Casa
+            var proySeguridad = new ProyectoWishlist
+            {
+                Nombre = "🛡️ Seguridad Casa",
+                Icono = "🛡️",
+                Descripcion = "Puerta blindada, verjas ventanas francesas y cámaras exteriores"
+            };
+            proySeguridad.Items.Add(new ItemWishlist { Categoria = "Puerta Principal", Nombre = "🚪 Puerta Blindada de Seguridad", PrecioEstimado = 225m, Prioridad = "🔴 Urgente", Estado = "⏳ Pendiente" });
+            proySeguridad.Items.Add(new ItemWishlist { Categoria = "Ventanas", Nombre = "🪟 Verjas para Ventanas Francesas", PrecioEstimado = 350m, Prioridad = "🔴 Urgente", Estado = "⏳ Pendiente" });
+            proySeguridad.Items.Add(new ItemWishlist { Categoria = "Cámaras", Nombre = "📹 2 Cámaras de Seguridad Exteriores (Instalación Propia)", PrecioEstimado = 70m, Prioridad = "🟠 Alta", Estado = "⏳ Pendiente" });
+            proySeguridad.Items.Add(new ItemWishlist { Categoria = "Instalación", Nombre = "🛠️ Mano de Obra (Instalación Puerta y Verjas)", PrecioEstimado = 150m, Prioridad = "🟠 Alta", Estado = "⏳ Pendiente" });
+
+            _listaProyectos.Add(proyCuarto);
+            _listaProyectos.Add(proyMuebles);
+            _listaProyectos.Add(proySeguridad);
+            _listaProyectos.Add(proyMoto);
+            _listaProyectos.Add(proyPC);
+        }
+
+        private void CmbProyectos_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (CmbProyectos.SelectedItem is ProyectoWishlist proy)
+            {
+                _proyectoSeleccionado = proy;
+                DgItemsWishlist.ItemsSource = _proyectoSeleccionado.Items;
+                SuscribirItemsProyecto();
+                ActualizarUIWishlist();
+            }
+            else
+            {
+                _proyectoSeleccionado = null;
+                DgItemsWishlist.ItemsSource = null;
+                ActualizarUIWishlist();
+            }
+        }
+
+        private void SuscribirItemsProyecto()
+        {
+            if (_proyectoSeleccionado == null) return;
+            foreach (var item in _proyectoSeleccionado.Items)
+            {
+                item.PropertyChanged -= Item_PropertyChanged;
+                item.PropertyChanged += Item_PropertyChanged;
+            }
+        }
+
+        private void Item_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (_proyectoSeleccionado != null)
+            {
+                _proyectoSeleccionado.NotificarCalculos();
+                ActualizarUIWishlist();
+            }
+        }
+
+        private void ActualizarUIWishlist()
+        {
+            if (_proyectoSeleccionado == null)
+            {
+                LblProyectoEstimado.Text = "$0.00";
+                LblProyectoComprado.Text = "$0.00";
+                LblProyectoPendiente.Text = "$0.00";
+                LblProyectoProgreso.Text = "0 de 0 (0%)";
+                return;
+            }
+
+            _proyectoSeleccionado.NotificarCalculos();
+            LblProyectoEstimado.Text = $"{_proyectoSeleccionado.TotalEstimado:C2}";
+            LblProyectoComprado.Text = $"{_proyectoSeleccionado.TotalComprado:C2}";
+            LblProyectoPendiente.Text = $"{_proyectoSeleccionado.TotalPendiente:C2}";
+            LblProyectoProgreso.Text = $"{_proyectoSeleccionado.CantidadComprados} de {_proyectoSeleccionado.TotalItems} ({_proyectoSeleccionado.PorcentajeItems:F0}%)";
+        }
+
+        private void BtnNuevoProyecto_Click(object sender, RoutedEventArgs e)
+        {
+            string nombre = Microsoft.VisualBasic.Interaction.InputBox("Nombre del nuevo proyecto / wishlist:", "Nuevo Proyecto", "Mi Proyecto Personal");
+            if (string.IsNullOrWhiteSpace(nombre)) return;
+
+            var nuevo = new ProyectoWishlist
+            {
+                Nombre = nombre.Trim(),
+                Icono = "📦"
+            };
+
+            _listaProyectos.Add(nuevo);
+            CmbProyectos.SelectedItem = nuevo;
+            LblEstadoWishlist.Text = $"Proyecto '{nuevo.Nombre}' creado";
+            LblEstadoWishlist.Foreground = System.Windows.Media.Brushes.Blue;
+        }
+
+        private void BtnEliminarProyecto_Click(object sender, RoutedEventArgs e)
+        {
+            if (_proyectoSeleccionado == null) return;
+
+            if (MessageBox.Show($"¿Eliminar el proyecto '{_proyectoSeleccionado.Nombre}' y todos sus componentes?",
+                "Confirmar Eliminación", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            {
+                string nombre = _proyectoSeleccionado.Nombre;
+                _listaProyectos.Remove(_proyectoSeleccionado);
+                if (_listaProyectos.Count > 0)
+                    CmbProyectos.SelectedIndex = 0;
+                else
+                    CmbProyectos.SelectedItem = null;
+
+                LblEstadoWishlist.Text = $"Proyecto '{nombre}' eliminado";
+                LblEstadoWishlist.Foreground = System.Windows.Media.Brushes.Red;
+            }
+        }
+
+        private void BtnPlantillaPC_Click(object sender, RoutedEventArgs e)
+        {
+            var existente = _listaProyectos.FirstOrDefault(p => p.Nombre.Contains("PC Gaming"));
+            if (existente != null)
+            {
+                CmbProyectos.SelectedItem = existente;
+            }
+            else
+            {
+                var proyPC = new ProyectoWishlist
+                {
+                    Nombre = "🖥️ Armar PC Gaming",
+                    Icono = "🖥️",
+                    Descripcion = "Componentes para armado de PC"
+                };
+                proyPC.Items.Add(new ItemWishlist { Categoria = "Procesador", Nombre = "CPU (Ryzen 7 / i7)", PrecioEstimado = 280m, Prioridad = "🔴 Urgente" });
+                proyPC.Items.Add(new ItemWishlist { Categoria = "Tarjeta de Video", Nombre = "GPU (RTX 4070 Super)", PrecioEstimado = 600m, Prioridad = "🔴 Urgente" });
+                proyPC.Items.Add(new ItemWishlist { Categoria = "Placa Base", Nombre = "Motherboard B650 / Z790", PrecioEstimado = 170m, Prioridad = "🟠 Alta" });
+                proyPC.Items.Add(new ItemWishlist { Categoria = "Memoria RAM", Nombre = "RAM 32GB DDR5", PrecioEstimado = 110m, Prioridad = "🟠 Alta" });
+                proyPC.Items.Add(new ItemWishlist { Categoria = "Almacenamiento", Nombre = "SSD NVMe M.2 2TB", PrecioEstimado = 130m, Prioridad = "🟠 Alta" });
+                proyPC.Items.Add(new ItemWishlist { Categoria = "Fuente", Nombre = "Fuente 750W 80+ Gold", PrecioEstimado = 100m, Prioridad = "🟠 Alta" });
+                proyPC.Items.Add(new ItemWishlist { Categoria = "Gabinete / Cooler", Nombre = "Gabinete + Liquida 240mm", PrecioEstimado = 120m, Prioridad = "🟡 Media" });
+                proyPC.Items.Add(new ItemWishlist { Categoria = "Monitor", Nombre = "Monitor 27\" 1440p 165Hz", PrecioEstimado = 230m, Prioridad = "🟡 Media" });
+
+                _listaProyectos.Add(proyPC);
+                CmbProyectos.SelectedItem = proyPC;
+            }
+
+            LblEstadoWishlist.Text = "Plantilla PC Gaming Cargada";
+            LblEstadoWishlist.Foreground = System.Windows.Media.Brushes.DarkViolet;
+        }
+
+        private void BtnPlantillaMoto_Click(object sender, RoutedEventArgs e)
+        {
+            var existente = _listaProyectos.FirstOrDefault(p => p.Nombre.Contains("Equipamiento Moto"));
+            if (existente != null)
+            {
+                CmbProyectos.SelectedItem = existente;
+            }
+            else
+            {
+                var proyMoto = new ProyectoWishlist
+                {
+                    Nombre = "🏍️ Equipamiento Moto",
+                    Icono = "🏍️",
+                    Descripcion = "Casco, botas, chaqueta y equipo"
+                };
+                proyMoto.Items.Add(new ItemWishlist { Categoria = "Seguridad", Nombre = "Casco Certificado (ECE 22.06 / DOT)", PrecioEstimado = 250m, Prioridad = "🔴 Urgente" });
+                proyMoto.Items.Add(new ItemWishlist { Categoria = "Calzado", Nombre = "Botas de Protección para Moto", PrecioEstimado = 160m, Prioridad = "🔴 Urgente" });
+                proyMoto.Items.Add(new ItemWishlist { Categoria = "Protección", Nombre = "Chaqueta con Protecciones", PrecioEstimado = 180m, Prioridad = "🟠 Alta" });
+                proyMoto.Items.Add(new ItemWishlist { Categoria = "Accesorios", Nombre = "Guantes Reforzados Kevlar/Cuero", PrecioEstimado = 55m, Prioridad = "🟠 Alta" });
+                proyMoto.Items.Add(new ItemWishlist { Categoria = "Tecnología", Nombre = "Intercomunicador Bluetooth", PrecioEstimado = 90m, Prioridad = "🟡 Media" });
+                proyMoto.Items.Add(new ItemWishlist { Categoria = "Mantenimiento", Nombre = "Impermeable de Lluvia", PrecioEstimado = 45m, Prioridad = "🟡 Media" });
+
+                _listaProyectos.Add(proyMoto);
+                CmbProyectos.SelectedItem = proyMoto;
+            }
+
+            LblEstadoWishlist.Text = "Plantilla Equipamiento Moto Cargada";
+            LblEstadoWishlist.Foreground = System.Windows.Media.Brushes.DarkGreen;
+        }
+
+        private void BtnPlantillaCuarto_Click(object sender, RoutedEventArgs e)
+        {
+            var existente = _listaProyectos.FirstOrDefault(p => p.Nombre.Contains("Cuarto PC"));
+            if (existente != null)
+            {
+                CmbProyectos.SelectedItem = existente;
+            }
+            else
+            {
+                var proy = new ProyectoWishlist
+                {
+                    Nombre = "🏗️ Construcción Cuarto PC",
+                    Icono = "🏗️",
+                    Descripcion = "Materiales y adecuación de pequeño cuarto para espacio personal y PC"
+                };
+                proy.Items.Add(new ItemWishlist { Categoria = "Materiales", Nombre = "Paneles de Gypsum / Paredes / Bloques", PrecioEstimado = 350m, Prioridad = "🔴 Urgente" });
+                proy.Items.Add(new ItemWishlist { Categoria = "Electricidad", Nombre = "Cableado Eléctrico & Tomacorrientes dedicados", PrecioEstimado = 120m, Prioridad = "🔴 Urgente" });
+                proy.Items.Add(new ItemWishlist { Categoria = "Mano de Obra", Nombre = "Instalación / Trabajo de Construcción", PrecioEstimado = 300m, Prioridad = "🟠 Alta" });
+                proy.Items.Add(new ItemWishlist { Categoria = "Acabados", Nombre = "Pintura e Iluminación LED", PrecioEstimado = 80m, Prioridad = "🟡 Media" });
+
+                _listaProyectos.Add(proy);
+                CmbProyectos.SelectedItem = proy;
+            }
+
+            LblEstadoWishlist.Text = "Plantilla Cuarto PC Cargada";
+            LblEstadoWishlist.Foreground = System.Windows.Media.Brushes.DodgerBlue;
+        }
+
+        private void BtnPlantillaMuebles_Click(object sender, RoutedEventArgs e)
+        {
+            var existente = _listaProyectos.FirstOrDefault(p => p.Nombre.Contains("Muebles & Electrodomésticos"));
+            if (existente != null)
+            {
+                CmbProyectos.SelectedItem = existente;
+            }
+            else
+            {
+                var proy = new ProyectoWishlist
+                {
+                    Nombre = "🛋️ Muebles & Electrodomésticos",
+                    Icono = "🛋️",
+                    Descripcion = "Cama Queen, Estufa, Aire, TV, Sillón"
+                };
+                proy.Items.Add(new ItemWishlist { Categoria = "Dormitorio", Nombre = "🛏️ Cama Grande Queen Size", PrecioEstimado = 350m, Prioridad = "🔴 Urgente" });
+                proy.Items.Add(new ItemWishlist { Categoria = "Cocina", Nombre = "🍳 Estufa de Cocina", PrecioEstimado = 220m, Prioridad = "🔴 Urgente" });
+                proy.Items.Add(new ItemWishlist { Categoria = "Climatización", Nombre = "❄️ Aire Acondicionado (Inverter)", PrecioEstimado = 350m, Prioridad = "🟠 Alta" });
+                proy.Items.Add(new ItemWishlist { Categoria = "Entretenimiento", Nombre = "📺 Televisor Smart TV", PrecioEstimado = 280m, Prioridad = "🟡 Media" });
+                proy.Items.Add(new ItemWishlist { Categoria = "Sala", Nombre = "🛋️ Sillón Pequeño / Compacto (Económico/Inflable)", PrecioEstimado = 60m, Prioridad = "🟢 Opcional" });
+
+                _listaProyectos.Add(proy);
+                CmbProyectos.SelectedItem = proy;
+            }
+
+            LblEstadoWishlist.Text = "Plantilla Muebles Cargada";
+            LblEstadoWishlist.Foreground = System.Windows.Media.Brushes.DeepPink;
+        }
+
+        private void BtnPlantillaSeguridad_Click(object sender, RoutedEventArgs e)
+        {
+            var existente = _listaProyectos.FirstOrDefault(p => p.Nombre.Contains("Seguridad Casa"));
+            if (existente != null)
+            {
+                CmbProyectos.SelectedItem = existente;
+            }
+            else
+            {
+                var proy = new ProyectoWishlist
+                {
+                    Nombre = "🛡️ Seguridad Casa",
+                    Icono = "🛡️",
+                    Descripcion = "Puerta blindada, verjas ventanas francesas y cámaras exteriores"
+                };
+                proy.Items.Add(new ItemWishlist { Categoria = "Puerta Principal", Nombre = "🚪 Puerta Blindada de Seguridad", PrecioEstimado = 225m, Prioridad = "🔴 Urgente" });
+                proy.Items.Add(new ItemWishlist { Categoria = "Ventanas", Nombre = "🪟 Verjas para Ventanas Francesas", PrecioEstimado = 350m, Prioridad = "🔴 Urgente" });
+                proy.Items.Add(new ItemWishlist { Categoria = "Cámaras", Nombre = "📹 2 Cámaras de Seguridad Exteriores (Instalación Propia)", PrecioEstimado = 70m, Prioridad = "🟠 Alta" });
+                proy.Items.Add(new ItemWishlist { Categoria = "Instalación", Nombre = "🛠️ Mano de Obra (Instalación Puerta y Verjas)", PrecioEstimado = 150m, Prioridad = "🟠 Alta" });
+
+                _listaProyectos.Add(proy);
+                CmbProyectos.SelectedItem = proy;
+            }
+
+            LblEstadoWishlist.Text = "Plantilla Seguridad Casa Cargada";
+            LblEstadoWishlist.Foreground = System.Windows.Media.Brushes.DarkOrange;
+        }
+
+        private void BtnAgregarItemWishlist_Click(object sender, RoutedEventArgs e)
+        {
+            if (_proyectoSeleccionado == null)
+            {
+                MessageBox.Show("Primero selecciona o crea un proyecto activo.", "Atención", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(TxtItemNombre.Text))
+            {
+                MessageBox.Show("Ingresa el nombre o modelo del artículo.", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            decimal.TryParse(TxtItemPrecioEst.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal est);
+            decimal.TryParse(TxtItemPrecioReal.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal real);
+
+            var prioItem = CmbItemPrioridad.SelectedItem as ComboBoxItem;
+            string prioStr = prioItem?.Content?.ToString() ?? "🟡 Media";
+
+            var nuevoItem = new ItemWishlist
+            {
+                Categoria = string.IsNullOrWhiteSpace(TxtItemCategoria.Text) ? "General" : TxtItemCategoria.Text.Trim(),
+                Nombre = TxtItemNombre.Text.Trim(),
+                PrecioEstimado = est,
+                PrecioReal = real,
+                Prioridad = prioStr,
+                Estado = real > 0 ? "✅ Comprado" : "⏳ Pendiente"
+            };
+
+            nuevoItem.PropertyChanged += Item_PropertyChanged;
+            _proyectoSeleccionado.Items.Add(nuevoItem);
+
+            TxtItemCategoria.Clear();
+            TxtItemNombre.Clear();
+            TxtItemPrecioEst.Clear();
+            TxtItemPrecioReal.Clear();
+
+            ActualizarUIWishlist();
+            LblEstadoWishlist.Text = $"Item '{nuevoItem.Nombre}' agregado";
+            LblEstadoWishlist.Foreground = System.Windows.Media.Brushes.DarkGreen;
+        }
+
+        private void BtnEliminarItemWishlist_Click(object sender, RoutedEventArgs e)
+        {
+            if (_proyectoSeleccionado == null) return;
+            if (sender is Button btn && btn.Tag is ItemWishlist item)
+            {
+                item.PropertyChanged -= Item_PropertyChanged;
+                _proyectoSeleccionado.Items.Remove(item);
+                ActualizarUIWishlist();
+            }
+        }
+
+        private void BtnGuardarProyectos_Click(object sender, RoutedEventArgs e)
+        {
+            GuardarProyectos();
+        }
+
+        private void GuardarProyectos()
+        {
+            try
+            {
+                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_rutaProyectos)!);
+                string json = System.Text.Json.JsonSerializer.Serialize(_listaProyectos, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                System.IO.File.WriteAllText(_rutaProyectos, json, System.Text.Encoding.UTF8);
+                LblEstadoWishlist.Text = "Proyectos guardados correctamente";
+                LblEstadoWishlist.Foreground = System.Windows.Media.Brushes.DarkGreen;
+                MessageBox.Show("Proyectos y Wishlists guardados exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al guardar proyectos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
         #endregion
     }
