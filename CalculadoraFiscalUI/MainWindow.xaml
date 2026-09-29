@@ -250,7 +250,7 @@
                                     <TextBox x:Name="TxtAporteQ1" Width="55" FontSize="12" Padding="4" Text="300" Background="White" BorderBrush="#E5E7EB"/>
 
                                     <TextBlock Text="2da Q ($):" ToolTip="Plan de ahorro base para la 2da quincena" Margin="8,0,5,0" FontSize="12" VerticalAlignment="Center"/>
-                                    <TextBox x:Name="TxtAporteQ2" Width="55" FontSize="12" Padding="4" Text="350" Background="White" BorderBrush="#E5E7EB"/>
+                                    <TextBox x:Name="TxtAporteQ2" Width="55" FontSize="12" Padding="4" Text="300" Background="White" BorderBrush="#E5E7EB"/>
 
                                     <TextBlock Text="🎁 Décimo ($):" ToolTip="Monto por cada décimo cuatrimestral (Abr, Ago, Dic)" Margin="8,0,5,0" FontSize="12" VerticalAlignment="Center"/>
                                     <TextBox x:Name="TxtMontoDecimo" Width="60" FontSize="12" Padding="4" Text="588" Background="White" BorderBrush="#E5E7EB"/>
@@ -384,7 +384,7 @@
                                             <StackPanel>
                                                 <TextBlock Text="🏍️ Moto (con ITBMS)" FontSize="11" FontWeight="Bold" Foreground="#C084FC"/>
                                                 <StackPanel Orientation="Horizontal" Margin="0,3,0,3">
-                                                    <TextBlock x:Name="LblSub4Monto" Text="$0 / $6,600" FontSize="11" Foreground="#F3F4F6" FontWeight="SemiBold"/>
+                                                    <TextBlock x:Name="LblSub4Monto" Text="$0 / $3,700" FontSize="11" Foreground="#F3F4F6" FontWeight="SemiBold"/>
                                                     <TextBlock x:Name="LblSub4Pct" Text=" (0%)" FontSize="11" Foreground="#E9D5FF"/>
                                                 </StackPanel>
                                                 <ProgressBar x:Name="PgbSub4" Height="7" Background="#1E293B" Foreground="#A855F7" Value="0" Maximum="100"/>
@@ -455,11 +455,11 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Grid.Column="0" Margin="0,0,6,0">
-                                            <TextBlock Text="🏠 P1: Vivienda ($8,850)" FontSize="11" FontWeight="Bold" Foreground="#38BDF8"/>
+                                            <TextBlock Text="🏠 Vivienda ($7,704)" FontSize="11" FontWeight="Bold" Foreground="#38BDF8"/>
                                             <TextBlock x:Name="LblEstadoCasa" Text="Evaluando..." FontSize="10" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,2,0,0"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="1" Margin="3,0,3,0">
-                                            <TextBlock Text="🏍️ P2: Moto+Muebles ($7,800)" FontSize="11" FontWeight="Bold" Foreground="#C084FC"/>
+                                            <TextBlock Text="🏍️ Moto+Muebles ($4,900)" FontSize="11" FontWeight="Bold" Foreground="#C084FC"/>
                                             <TextBlock x:Name="LblEstadoMoto" Text="Evaluando..." FontSize="10" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,2,0,0"/>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2" Margin="6,0,0,0">
@@ -493,7 +493,7 @@
                                     <ComboBoxItem Content="🏠 Casa - Abono Inicial ($3,500)" Tag="SUB2"/>
                                     <ComboBoxItem Content="🛡️ Seguridad de Casa ($1,500)" Tag="SUB3"/>
                                     <ComboBoxItem Content="💡 Conexión Servicios &amp; Trámites ($350)" Tag="SUB8"/>
-                                    <ComboBoxItem Content="🏍️ Moto (con ITBMS) ($6,600)" Tag="SUB4"/>
+                                    <ComboBoxItem Content="🏍️ Moto (con ITBMS) ($3,700)" Tag="SUB4"/>
                                     <ComboBoxItem Content="🛋️ Fondo Inicial Muebles ($1,200)" Tag="SUB5"/>
                                     <ComboBoxItem Content="🚨 Fondo de Emergencia ($3,000)" Tag="SUB6"/>
                                     <ComboBoxItem Content="📉 Abono a Capital Hipoteca" Tag="SUB7"/>
@@ -693,6 +693,223 @@
                     <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center">
                         <Button Content="💾 Guardar Proyectos &amp; Wishlists" Click="BtnGuardarProyectos_Click" Padding="20,8" FontSize="13" Background="#059669" Foreground="White" Cursor="Hand" Margin="0,0,10,0"/>
                         <TextBlock x:Name="LblEstadoWishlist" Text="" VerticalAlignment="Center" FontSize="12" Foreground="#059669" FontStyle="Italic"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <!-- ================= PESTAÑA 5: MOTO (CONTINENTAL GT) ================= -->
+            <TabItem Header="🏍️ Moto (Continental GT)" FontSize="14" Height="25" VerticalAlignment="Top">
+                <Grid Margin="15">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Fila 0: Tarjeta de Resumen y Control de Kilometraje -->
+                    <Border Grid.Row="0" Background="#1E293B" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Col 0: Título e Info Moto -->
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="🏍️ Royal Enfield" FontSize="12" Foreground="#94A3B8" FontWeight="SemiBold"/>
+                                <TextBlock Text="Continental GT 650" FontSize="15" FontWeight="Bold" Foreground="#F8FAFC"/>
+                            </StackPanel>
+
+                            <!-- Col 1: Odómetro / Km Actual -->
+                            <Border Grid.Column="1" Background="#0F172A" CornerRadius="6" Padding="8,6" Margin="0,0,15,0" BorderBrush="#334155" BorderThickness="1">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="📉 Odómetro:" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBox x:Name="TxtMotoKmActual" Width="70" FontSize="12" Padding="4,2" Background="#1E293B" Foreground="#38BDF8" FontWeight="Bold" BorderBrush="#3B82F6" BorderThickness="1" TextAlignment="Center"/>
+                                    <TextBlock Text="km" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Center" Margin="4,0,8,0"/>
+                                    <Button Content="💾" Click="BtnActualizarKm_Click" Width="26" Height="24" Background="#3B82F6" Foreground="White" BorderBrush="Transparent" Cursor="Hand" ToolTip="Actualizar Kilometraje Actual"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Col 2: Resumen Financiero Módulo Moto -->
+                            <Grid Grid.Column="2" VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                    <TextBlock Text="🛒 Mod. Compradas" FontSize="10" Foreground="#94A3B8"/>
+                                    <TextBlock x:Name="LblMotoTotalModCompradas" Text="$0.00" FontSize="14" FontWeight="Bold" Foreground="#10B981"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                    <TextBlock Text="⏳ Mod. Pendientes" FontSize="10" Foreground="#94A3B8"/>
+                                    <TextBlock x:Name="LblMotoTotalModPendientes" Text="$0.00" FontSize="14" FontWeight="Bold" Foreground="#F59E0B"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                    <TextBlock Text="🛠️ Próximos Servicios" FontSize="10" Foreground="#94A3B8"/>
+                                    <TextBlock x:Name="LblMotoServiciosProximos" Text="0 pendientes" FontSize="14" FontWeight="Bold" Foreground="#38BDF8"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Col 3: Botones de Acción Global Moto -->
+                            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Content="⚡ Cargar Plantilla RE GT" Click="BtnCargarPlantillaMotoCompleta_Click" Padding="8,5" FontSize="11" Background="#8B5CF6" Foreground="White" Cursor="Hand" ToolTip="Carga la plantilla recomendada de personalización y mantenimientos para la Continental GT"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Fila 1: Sub-TabControl (1. Cosas que quiero cambiar, 2. Servicios & Mantenimientos) -->
+                    <TabControl Grid.Row="1" FontSize="12">
+                        <!-- Sub-Tab 1: Cosas que quiero cambiar -->
+                        <TabItem Header="🔧 1. Cosas que quiero cambiar (Custom &amp; Wishlist)">
+                            <Grid Margin="10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Formulario de alta para Modificación -->
+                                <GroupBox Grid.Row="0" Header="➕ Agregar Modificación / Accesorio Deseado" FontSize="12" FontWeight="Bold" Padding="8" Margin="0,0,0,8" BorderBrush="#E5E7EB">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="140"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="90"/>
+                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <ComboBox x:Name="CmbModCategoria" Grid.Column="0" FontSize="12" Padding="3" Margin="0,0,6,0">
+                                            <ComboBoxItem Content="Estética" IsSelected="True"/>
+                                            <ComboBoxItem Content="Escape/Rendimiento"/>
+                                            <ComboBoxItem Content="Ergonomía/Asiento"/>
+                                            <ComboBoxItem Content="Iluminación"/>
+                                            <ComboBoxItem Content="Protección"/>
+                                            <ComboBoxItem Content="Frenos/Suspensión"/>
+                                        </ComboBox>
+                                        <TextBox x:Name="TxtModNombre" Grid.Column="1" FontSize="12" Padding="5,4" Margin="0,0,6,0" Background="White" BorderBrush="#CCCCCC" BorderThickness="1" ToolTip="Nombre de la pieza/modificación (ej: Espejos Bar-End, Escape AEW)"/>
+                                        <TextBox x:Name="TxtModPrecioEst" Grid.Column="2" FontSize="12" Padding="5,4" Margin="0,0,6,0" Background="White" BorderBrush="#CCCCCC" BorderThickness="1" ToolTip="Precio Estimado ($)"/>
+                                        <TextBox x:Name="TxtModPrecioReal" Grid.Column="3" FontSize="12" Padding="5,4" Margin="0,0,6,0" Background="White" BorderBrush="#CCCCCC" BorderThickness="1" ToolTip="Precio Real / Pagado ($)"/>
+
+                                        <ComboBox x:Name="CmbModPrioridad" Grid.Column="4" FontSize="12" Padding="3" Margin="0,0,6,0">
+                                            <ComboBoxItem Content="🔴 Alta"/>
+                                            <ComboBoxItem Content="🟠 Media" IsSelected="True"/>
+                                            <ComboBoxItem Content="🟢 Opcional"/>
+                                        </ComboBox>
+
+                                        <Button Grid.Column="5" Content="➕ Agregar Pieza" Click="BtnAgregarModificacion_Click" Width="110" Background="#3B82F6" Foreground="White" FontSize="12" Cursor="Hand"/>
+                                    </Grid>
+                                </GroupBox>
+
+                                <!-- DataGrid Modificaciones -->
+                                <Border Grid.Row="1" Background="White" CornerRadius="6" BorderBrush="#E5E7EB" BorderThickness="1" Padding="5">
+                                    <DataGrid x:Name="DgMotoModificaciones" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" Background="White" FontSize="12" RowHeight="32">
+                                        <DataGrid.Columns>
+                                            <DataGridCheckBoxColumn Header="Instalado" Binding="{Binding Completado, UpdateSourceTrigger=PropertyChanged}" Width="75">
+                                                <DataGridCheckBoxColumn.ElementStyle>
+                                                    <Style TargetType="CheckBox">
+                                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                                    </Style>
+                                                </DataGridCheckBoxColumn.ElementStyle>
+                                            </DataGridCheckBoxColumn>
+                                            <DataGridTextColumn Header="Categoría" Binding="{Binding Categoria}" Width="130"/>
+                                            <DataGridTextColumn Header="Nombre / Accesorio" Binding="{Binding Nombre}" Width="*"/>
+                                            <DataGridTextColumn Header="Precio Est." Binding="{Binding PrecioEstimado, StringFormat=C2}" Width="105"/>
+                                            <DataGridTextColumn Header="Precio Real" Binding="{Binding PrecioReal, StringFormat=C2}" Width="105"/>
+                                            <DataGridTextColumn Header="Prioridad" Binding="{Binding Prioridad}" Width="100"/>
+                                            <DataGridTextColumn Header="Estado" Binding="{Binding Estado}" Width="110"/>
+                                            <DataGridTextColumn Header="Notas" Binding="{Binding Notas}" Width="160"/>
+                                            <DataGridTemplateColumn Header="Acción" Width="60">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Button Content="🗑️" Click="BtnEliminarModificacion_Click" Background="#EF4444" Foreground="White" BorderBrush="Transparent" Cursor="Hand" Tag="{Binding}" Width="40" Height="22" FontSize="11"/>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Border>
+                            </Grid>
+                        </TabItem>
+
+                        <!-- Sub-Tab 2: Servicios & Mantenimientos -->
+                        <TabItem Header="🛠️ 2. Servicios &amp; Mantenimientos (Programación por Kilometraje)">
+                            <Grid Margin="10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Formulario de alta para Servicio / Mantenimiento centrado en Kilometraje -->
+                                <GroupBox Grid.Row="0" Header="➕ Registrar Mantenimiento / Pieza de Desgaste (Programación por Km)" FontSize="12" FontWeight="Bold" Padding="8" Margin="0,0,0,8" BorderBrush="#E5E7EB">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="160"/>
+                                            <ColumnDefinition Width="130"/>
+                                            <ColumnDefinition Width="140"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBox x:Name="TxtServicioConcepto" Grid.Column="0" FontSize="12" Padding="5,4" Margin="0,0,6,0" Background="White" BorderBrush="#CCCCCC" BorderThickness="1" ToolTip="Concepto (ej: Cambio de Cadena, Cambio de Aceite, Pastillas de Freno)"/>
+
+                                        <ComboBox x:Name="CmbServicioTipo" Grid.Column="1" FontSize="12" Padding="3" Margin="0,0,6,0">
+                                            <ComboBoxItem Content="⚙️ Pieza de Desgaste" IsSelected="True"/>
+                                            <ComboBoxItem Content="🛢️ Mantenimiento Rutinario"/>
+                                            <ComboBoxItem Content="🔧 Reparación"/>
+                                            <ComboBoxItem Content="🔍 Inspección"/>
+                                        </ComboBox>
+
+                                        <TextBox x:Name="TxtServicioKm" Grid.Column="2" FontSize="12" Padding="5,4" Margin="0,0,6,0" Background="White" BorderBrush="#CCCCCC" BorderThickness="1" ToolTip="Último Km realizado (ej: 5000)"/>
+                                        <TextBox x:Name="TxtServicioProxKm" Grid.Column="3" FontSize="12" Padding="5,4" Margin="0,0,6,0" Background="White" BorderBrush="#CCCCCC" BorderThickness="1" ToolTip="¿A qué Km se debe hacer? (ej: 15000)"/>
+
+                                        <Button Grid.Column="4" Content="➕ Registrar Servicio" Click="BtnAgregarServicio_Click" Width="130" Background="#059669" Foreground="White" FontSize="12" Cursor="Hand"/>
+                                    </Grid>
+                                </GroupBox>
+
+                                <!-- DataGrid Servicios centrado exclusivamente en Kilometraje -->
+                                <Border Grid.Row="1" Background="White" CornerRadius="6" BorderBrush="#E5E7EB" BorderThickness="1" Padding="5">
+                                    <DataGrid x:Name="DgMotoServicios" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" Background="White" FontSize="12" RowHeight="32">
+                                        <DataGrid.Columns>
+                                            <DataGridCheckBoxColumn Header="Realizado" Binding="{Binding Realizado, UpdateSourceTrigger=PropertyChanged}" Width="75">
+                                                <DataGridCheckBoxColumn.ElementStyle>
+                                                    <Style TargetType="CheckBox">
+                                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                                    </Style>
+                                                </DataGridCheckBoxColumn.ElementStyle>
+                                            </DataGridCheckBoxColumn>
+                                            <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="160"/>
+                                            <DataGridTextColumn Header="Concepto / Mantenimiento / Pieza" Binding="{Binding Concepto}" Width="*"/>
+                                            <DataGridTextColumn Header="Último Km Realizado" Binding="{Binding KilometrajeServicio, StringFormat={}{0:N0} km}" Width="140"/>
+                                            <DataGridTextColumn Header="¿Cuándo se debe hacer?" Binding="{Binding CuandoSeDebeHacer}" Width="190"/>
+                                            <DataGridTextColumn Header="Estado" Binding="{Binding EstadoFormateado}" Width="110"/>
+                                            <DataGridTextColumn Header="Notas" Binding="{Binding Notas}" Width="180"/>
+                                            <DataGridTemplateColumn Header="Acción" Width="60">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Button Content="🗑️" Click="BtnEliminarServicio_Click" Background="#EF4444" Foreground="White" BorderBrush="Transparent" Cursor="Hand" Tag="{Binding}" Width="40" Height="22" FontSize="11"/>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Border>
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
+
+                    <!-- Fila 2: Guardar Datos Moto -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
+                        <Button Content="💾 Guardar Cambios de Moto" Click="BtnGuardarMoto_Click" Padding="20,8" FontSize="13" Background="#059669" Foreground="White" Cursor="Hand" Margin="0,0,10,0"/>
+                        <TextBlock x:Name="LblEstadoMotoModulo" Text="" VerticalAlignment="Center" FontSize="12" Foreground="#059669" FontStyle="Italic"/>
                     </StackPanel>
                 </Grid>
             </TabItem>

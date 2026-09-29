@@ -24,20 +24,24 @@ namespace CalculadoraFiscalUI
     {
         private readonly CalculadoraFiscal _fiscal = new();
         private readonly RepositorioQuincenas _repo;
+        private readonly RepositorioMoto _repoMoto;
         private readonly ObservableCollection<Gasto> _listaGastos = new();
 
         public decimal SalarioFinalCalculado { get; private set; }
         private PeriodoQuincenal _periodoActual = new();
+        private DatosMoto _datosMoto = new();
 
         public MainWindow()
         {
             InitializeComponent();
             _repo = new RepositorioQuincenas(AppContext.BaseDirectory);
+            _repoMoto = new RepositorioMoto(AppContext.BaseDirectory);
             DgGastos.ItemsSource = _listaGastos;
             InicializarPeriodos();
             CargarPeriodoPorDefecto();
             CargarMetaAhorro();
             CargarProyectos();
+            CargarDatosMoto();
         }
 
         #region INICIALIZACIÓN Y CARGA DE DATOS
@@ -428,7 +432,7 @@ namespace CalculadoraFiscalUI
                 new SubMetaAhorro { Nombre = "🏠 Casa - Abono Inicial", MontoObjetivo = 3500m, Icono = "🏠" },
                 new SubMetaAhorro { Nombre = "🛡️ Seguridad de Casa", MontoObjetivo = 1500m, Icono = "🛡️" },
                 new SubMetaAhorro { Nombre = "💡 Conexión Servicios & Trámites", MontoObjetivo = 350m, Icono = "💡" },
-                new SubMetaAhorro { Nombre = "🏍️ Moto (con ITBMS)", MontoObjetivo = 6600m, Icono = "🏍️" },
+                new SubMetaAhorro { Nombre = "🏍️ Moto (con ITBMS)", MontoObjetivo = 3700m, Icono = "🏍️" },
                 new SubMetaAhorro { Nombre = "🛋️ Fondo Inicial Muebles", MontoObjetivo = 1200m, Icono = "🛋️" },
                 new SubMetaAhorro { Nombre = "🚨 Fondo de Emergencia", MontoObjetivo = 3000m, Icono = "🚨" },
                 new SubMetaAhorro { Nombre = "📉 Abono a Capital Hipoteca", MontoObjetivo = 0m, Icono = "📉" }
@@ -551,19 +555,39 @@ namespace CalculadoraFiscalUI
 
             if (destinoTag == "AUTO")
             {
-                // Cascadas por prioridad: Legales ($3500) -> Abono ($3500) -> Seguridad ($1500) -> Servicios ($350) -> Moto ($6600) -> Muebles ($1200) -> Emergencia ($3000) -> Abono Capital
+                // Cascadas por prioridad diferenciada:
+                // Décimo y Vacaciones a Casa primero; Quincenas normales a Moto ($3,700) primero.
                 decimal rem = monto;
-                string[] ordenMetas = new string[]
+                string[] ordenMetas;
+
+                if (tipoStr == "Décimo" || tipoStr == "Vacaciones")
                 {
-                    "Gastos Legales",
-                    "Abono Inicial",
-                    "Seguridad de Casa",
-                    "Conexión Servicios",
-                    "Moto",
-                    "Fondo Inicial Muebles",
-                    "Fondo de Emergencia",
-                    "Abono a Capital"
-                };
+                    ordenMetas = new string[]
+                    {
+                        "Gastos Legales",
+                        "Abono Inicial",
+                        "Seguridad de Casa",
+                        "Conexión Servicios",
+                        "Moto",
+                        "Fondo Inicial Muebles",
+                        "Fondo de Emergencia",
+                        "Abono a Capital"
+                    };
+                }
+                else
+                {
+                    ordenMetas = new string[]
+                    {
+                        "Moto",
+                        "Gastos Legales",
+                        "Abono Inicial",
+                        "Seguridad de Casa",
+                        "Conexión Servicios",
+                        "Fondo Inicial Muebles",
+                        "Fondo de Emergencia",
+                        "Abono a Capital"
+                    };
+                }
 
                 foreach (var metaPart in ordenMetas)
                 {
@@ -589,7 +613,9 @@ namespace CalculadoraFiscalUI
                         }
                     }
                 }
-                destinoNombre = "⚡ Auto (Prioridades)";
+                destinoNombre = (tipoStr == "Décimo" || tipoStr == "Vacaciones")
+                    ? "⚡ Auto (Prioridad Casa - Décimo/Vac)"
+                    : "⚡ Auto (Prioridad Moto - Quincenal)";
             }
             else
             {
@@ -733,16 +759,12 @@ namespace CalculadoraFiscalUI
                             : 0m;
 
                         decimal aporteQuincenaTotal = aporteBase + incrementoExtra;
-                        proyectadoQuincenas += aporteQuincenaTotal;
-
-                        if (q == 1) cantQ1++; else cantQ2++;
 
                         decimal decimoEstePeriodo = 0m;
                         if (q == 1 && (m == 4 || m == 8 || m == 12) && dtQ <= limite)
                         {
                             cantDecimos++;
                             decimoEstePeriodo = _metaActual.MontoDecimo;
-                            proyectadoDecimos += decimoEstePeriodo;
                         }
 
                         decimal vacacionesEstePeriodo = 0m;
@@ -751,40 +773,68 @@ namespace CalculadoraFiscalUI
                             if (y == 2026 && m == _metaActual.MesVacaciones2026)
                             {
                                 vacacionesEstePeriodo = _metaActual.MontoVacaciones2026;
-                                proyectadoVacaciones += vacacionesEstePeriodo;
                             }
                             else if (y > 2026 && m == _metaActual.MesVacacionesAnual)
                             {
                                 vacacionesEstePeriodo = _metaActual.MontoVacaciones;
-                                proyectadoVacaciones += vacacionesEstePeriodo;
                             }
                         }
 
-                        acumuladoRunning += (aporteQuincenaTotal + decimoEstePeriodo + vacacionesEstePeriodo);
+                        // 🛡️ Descontar depósitos ya realizados en este periodo para no duplicar el acumulado
+                        decimal yaDepositadoQ = _metaActual.Historial
+                            .Where(h => (h.Anio == y || h.Fecha.Year == y) && h.Fecha.Month == m && h.Quincena == q && !h.Tipo.Contains("Décimo") && !h.Tipo.Contains("Vacacion"))
+                            .Sum(h => h.Monto);
 
-                        string hito = "🏠 Gastos Legales + Colchón";
-                        if (acumuladoRunning >= 18504.26m)
-                            hito = "📉 Abono a Capital Hipoteca";
-                        else if (acumuladoRunning >= 15504.26m)
-                            hito = "🚨 Fondo de Emergencia";
-                        else if (acumuladoRunning >= 14304.26m)
-                            hito = "🛋️ Fondo Inicial Muebles";
-                        else if (acumuladoRunning >= 7704.26m)
-                            hito = "🏍️ Moto (con ITBMS)";
-                        else if (acumuladoRunning >= 7354.26m)
-                            hito = "💡 Conexión Servicios & Trámites";
-                        else if (acumuladoRunning >= 5854.26m)
-                            hito = "🛡️ Seguridad de Casa";
-                        else if (acumuladoRunning >= 2354.26m)
-                            hito = "🏠 Abono Inicial Casa";
+                        decimal yaDepositadoDec = _metaActual.Historial
+                            .Where(h => (h.Anio == y || h.Fecha.Year == y) && h.Fecha.Month == m && h.Quincena == q && h.Tipo.Contains("Décimo"))
+                            .Sum(h => h.Monto);
+
+                        decimal yaDepositadoVac = _metaActual.Historial
+                            .Where(h => (h.Anio == y || h.Fecha.Year == y) && h.Fecha.Month == m && h.Quincena == q && h.Tipo.Contains("Vacacion"))
+                            .Sum(h => h.Monto);
+
+                        decimal aporteQuincenalPendiente = Math.Max(0m, aporteQuincenaTotal - yaDepositadoQ);
+                        decimal decimoPendiente = Math.Max(0m, decimoEstePeriodo - yaDepositadoDec);
+                        decimal vacacionesPendiente = Math.Max(0m, vacacionesEstePeriodo - yaDepositadoVac);
+
+                        proyectadoQuincenas += aporteQuincenalPendiente;
+                        proyectadoDecimos += decimoPendiente;
+                        proyectadoVacaciones += vacacionesPendiente;
+
+                        if (q == 1) cantQ1++; else cantQ2++;
+
+                        acumuladoRunning += (aporteQuincenalPendiente + decimoPendiente + vacacionesPendiente);
+
+                        string hito = "🏍️ Moto (con ITBMS - Enero 2027)";
+                        if (decimoPendiente > 0 || vacacionesPendiente > 0)
+                        {
+                            hito = "🏠 Casa - Gastos Legales (Décimo/Vac)";
+                        }
+                        else if (dtQ > new DateTime(2027, 1, 31) || acumuladoRunning >= 3700.00m)
+                        {
+                            if (acumuladoRunning >= 15604.26m)
+                                hito = "📉 Abono a Capital Hipoteca";
+                            else if (acumuladoRunning >= 12604.26m)
+                                hito = "🚨 Fondo de Emergencia";
+                            else if (acumuladoRunning >= 11404.26m)
+                                hito = "🛋️ Fondo Inicial Muebles";
+                            else if (acumuladoRunning >= 11054.26m)
+                                hito = "💡 Conexión Servicios & Trámites";
+                            else if (acumuladoRunning >= 9554.26m)
+                                hito = "🛡️ Seguridad de Casa";
+                            else if (acumuladoRunning >= 6054.26m)
+                                hito = "🏠 Abono Inicial Casa";
+                            else
+                                hito = "🏠 Gastos Legales + Colchón";
+                        }
 
                         listaProyeccion.Add(new FilaProyeccionAhorro
                         {
                             Fecha = dtQ,
                             Periodo = $"{y}-Q{q}",
-                            AporteQuincenal = aporteQuincenaTotal,
-                            MontoDecimo = decimoEstePeriodo,
-                            MontoVacaciones = vacacionesEstePeriodo,
+                            AporteQuincenal = aporteQuincenalPendiente,
+                            MontoDecimo = decimoPendiente,
+                            MontoVacaciones = vacacionesPendiente,
                             Acumulado = acumuladoRunning,
                             Hito = hito
                         });
@@ -797,9 +847,9 @@ namespace CalculadoraFiscalUI
             decimal totalProyectado = _metaActual.MontoActual + proyectadoQuincenas + proyectadoDecimos + proyectadoVacaciones;
             LblProyeccionDic2027.Text = $" {totalProyectado:C2}";
 
-            // === Evaluación de Prioridades: Vivienda ($7,704.26) vs. Moto+Muebles ($7,800) vs. Fondo Emergencia ($3,000) ===
+            // === Evaluación de Prioridades: Vivienda ($7,704.26) vs. Moto+Muebles ($4,900) vs. Fondo Emergencia ($3,000) ===
             decimal metaViviendaTotal = 7704.26m; // Legales + Colchón ($2,354.26) + Abono ($3,500) + Seguridad ($1,500) + Servicios ($350)
-            decimal metaMotoMueblesTotal = 7800m; // Moto ($6,600) + Muebles ($1,200)
+            decimal metaMotoMueblesTotal = 4900m; // Moto ($3,700) + Muebles ($1,200)
             decimal metaEmergenciaTotal = 3000m; // Fondo de Emergencia
 
             if (totalProyectado >= metaViviendaTotal)
@@ -815,7 +865,7 @@ namespace CalculadoraFiscalUI
                 decimal acumuladoPostEmergencia = sobranteParaMoto;
                 int qExtraMoto = 0;
                 int qExtraEmergencia = 0;
-                decimal metaTotalGeneral = metaMotoMueblesTotal + metaEmergenciaTotal; // $10,800 sobrante total requerido
+                decimal metaTotalGeneral = metaMotoMueblesTotal + metaEmergenciaTotal; // $7,900 sobrante total requerido
 
                 while (acumuladoPostEmergencia < metaTotalGeneral)
                 {
@@ -857,7 +907,7 @@ namespace CalculadoraFiscalUI
                 if (sobranteParaMoto >= metaMotoMueblesTotal)
                 {
                     decimal excedenteAhorroContinuo = sobranteParaMoto - metaMotoMueblesTotal;
-                    LblEstadoMoto.Text = $"✅ ¡100% CUBIERTAS! Moto ($6.6k) y Muebles ($1.2k) listos al {limite:dd/MM/yyyy}.";
+                    LblEstadoMoto.Text = $"✅ ¡100% CUBIERTAS! Moto ($3.7k) y Muebles ($1.2k) listos al {limite:dd/MM/yyyy}.";
                     LblEstadoAhorroContinuo.Text = $"🚀 Excedente de ${excedenteAhorroContinuo:N0} pasa a Fondo de Emergencia.\n🎯 Emergencia ($3k) se completa el {dtSimEmergencia:dd/MM/yyyy} ({qExtraEmergencia} Qs post-entrega).";
                     LblEstadoMeta2027.Text = $"🚀 Plan Excelente: Superas tus metas principales por ${excedenteAhorroContinuo:N0} al {limite:dd/MM/yyyy}.";
                     LblEstadoMeta2027.Foreground = Brushes.LightGreen;
@@ -980,7 +1030,7 @@ namespace CalculadoraFiscalUI
                     TxtNombreMeta.Text = meta.Nombre;
                     TxtMetaMonto.Text = $"{meta.MontoObjetivo:C0}";
                     TxtAporteQ1.Text = meta.AporteQ1 > 0 ? meta.AporteQ1.ToString() : "300";
-                    TxtAporteQ2.Text = meta.AporteQ2 > 0 ? meta.AporteQ2.ToString() : "350";
+                    TxtAporteQ2.Text = meta.AporteQ2 > 0 ? meta.AporteQ2.ToString() : "300";
                     TxtMontoDecimo.Text = meta.MontoDecimo > 0 ? meta.MontoDecimo.ToString() : "588";
                     TxtMontoVacaciones.Text = meta.MontoVacaciones > 0 ? meta.MontoVacaciones.ToString() : "888";
                     TxtMontoVacaciones2026.Text = meta.MontoVacaciones2026 > 0 ? meta.MontoVacaciones2026.ToString() : "444";
@@ -1413,6 +1463,201 @@ namespace CalculadoraFiscalUI
             catch (Exception ex)
             {
                 MessageBox.Show($"Error al guardar proyectos: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        #endregion
+
+        #region MÓDULO MOTO (ROYAL ENFIELD CONTINENTAL GT)
+        private void CargarDatosMoto()
+        {
+            _datosMoto = _repoMoto.Cargar();
+            TxtMotoKmActual.Text = _datosMoto.KilometrajeActual.ToString();
+
+            DgMotoModificaciones.ItemsSource = _datosMoto.Modificaciones;
+            DgMotoServicios.ItemsSource = _datosMoto.Servicios;
+
+            SuscribirItemsMoto();
+            ActualizarUIMoto();
+        }
+
+        private void SuscribirItemsMoto()
+        {
+            if (_datosMoto == null) return;
+
+            foreach (var mod in _datosMoto.Modificaciones)
+            {
+                mod.PropertyChanged -= ItemMoto_PropertyChanged;
+                mod.PropertyChanged += ItemMoto_PropertyChanged;
+            }
+
+            foreach (var srv in _datosMoto.Servicios)
+            {
+                srv.PropertyChanged -= ItemMoto_PropertyChanged;
+                srv.PropertyChanged += ItemMoto_PropertyChanged;
+            }
+        }
+
+        private void ItemMoto_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            ActualizarUIMoto();
+        }
+
+        private void ActualizarUIMoto()
+        {
+            if (_datosMoto == null) return;
+            _datosMoto.NotificarCalculos();
+
+            LblMotoTotalModCompradas.Text = $"{_datosMoto.TotalCompradoModificaciones:C2}";
+            LblMotoTotalModPendientes.Text = $"{_datosMoto.TotalPendienteModificaciones:C2}";
+            LblMotoServiciosProximos.Text = $"{_datosMoto.CantidadServiciosPendientes} pendientes";
+        }
+
+        private void BtnActualizarKm_Click(object sender, RoutedEventArgs e)
+        {
+            if (int.TryParse(TxtMotoKmActual.Text.Replace(".", "").Replace(",", "").Trim(), out int km) && km >= 0)
+            {
+                _datosMoto.KilometrajeActual = km;
+                ActualizarUIMoto();
+                LblEstadoMotoModulo.Text = $"Odómetro actualizado a {km:N0} km";
+                LblEstadoMotoModulo.Foreground = System.Windows.Media.Brushes.Blue;
+            }
+            else
+            {
+                MessageBox.Show("Ingresa un kilometraje válido (número entero positivo).", "Validación", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void BtnAgregarModificacion_Click(object sender, RoutedEventArgs e)
+        {
+            string nombre = TxtModNombre.Text.Trim();
+            if (string.IsNullOrWhiteSpace(nombre))
+            {
+                MessageBox.Show("Ingresa el nombre de la pieza o modificación.", "Campo requerido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            decimal.TryParse(TxtModPrecioEst.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal est);
+            decimal.TryParse(TxtModPrecioReal.Text.Replace("$", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out decimal real);
+
+            string cat = (CmbModCategoria.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Estética";
+            string prio = (CmbModPrioridad.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "🟠 Media";
+
+            var nuevaMod = new MotoModificacion
+            {
+                Nombre = nombre,
+                Categoria = cat,
+                PrecioEstimado = est,
+                PrecioReal = real,
+                Prioridad = prio,
+                Estado = real > 0 ? "✅ Instalado" : "⏳ Deseado"
+            };
+
+            nuevaMod.PropertyChanged += ItemMoto_PropertyChanged;
+            _datosMoto.Modificaciones.Add(nuevaMod);
+
+            TxtModNombre.Clear();
+            TxtModPrecioEst.Clear();
+            TxtModPrecioReal.Clear();
+
+            ActualizarUIMoto();
+            LblEstadoMotoModulo.Text = $"Modificación '{nuevaMod.Nombre}' agregada";
+            LblEstadoMotoModulo.Foreground = System.Windows.Media.Brushes.DarkGreen;
+        }
+
+        private void BtnEliminarModificacion_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is MotoModificacion mod)
+            {
+                mod.PropertyChanged -= ItemMoto_PropertyChanged;
+                _datosMoto.Modificaciones.Remove(mod);
+                ActualizarUIMoto();
+            }
+        }
+
+        private void BtnAgregarServicio_Click(object sender, RoutedEventArgs e)
+        {
+            string concepto = TxtServicioConcepto.Text.Trim();
+            if (string.IsNullOrWhiteSpace(concepto))
+            {
+                MessageBox.Show("Ingresa el concepto del servicio o pieza de desgaste.", "Campo requerido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            string tipo = (CmbServicioTipo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "⚙️ Pieza de Desgaste";
+            int.TryParse(TxtServicioKm.Text, out int kmSrv);
+            if (kmSrv <= 0) kmSrv = _datosMoto.KilometrajeActual;
+            int.TryParse(TxtServicioProxKm.Text, out int proxKm);
+            if (proxKm <= 0) proxKm = kmSrv + 5000;
+
+            var nuevoSrv = new ServicioMoto
+            {
+                Concepto = concepto,
+                Tipo = tipo,
+                KilometrajeServicio = kmSrv,
+                ProximoKilometraje = proxKm,
+                Realizado = false,
+                FechaServicio = DateTime.Now
+            };
+
+            nuevoSrv.PropertyChanged += ItemMoto_PropertyChanged;
+            _datosMoto.Servicios.Add(nuevoSrv);
+
+            TxtServicioConcepto.Clear();
+            TxtServicioKm.Clear();
+            TxtServicioProxKm.Clear();
+
+            ActualizarUIMoto();
+            LblEstadoMotoModulo.Text = $"Servicio '{nuevoSrv.Concepto}' registrado";
+            LblEstadoMotoModulo.Foreground = System.Windows.Media.Brushes.DarkGreen;
+        }
+
+        private void BtnEliminarServicio_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is ServicioMoto srv)
+            {
+                srv.PropertyChanged -= ItemMoto_PropertyChanged;
+                _datosMoto.Servicios.Remove(srv);
+                ActualizarUIMoto();
+            }
+        }
+
+        private void BtnCargarPlantillaMotoCompleta_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBox.Show("¿Deseas reiniciar la lista con la plantilla completa recomendada para la Royal Enfield Continental GT?",
+                "Cargar Plantilla RE Continental GT", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            {
+                _datosMoto = _repoMoto.CrearPlantillaPorDefecto();
+                TxtMotoKmActual.Text = _datosMoto.KilometrajeActual.ToString();
+
+                DgMotoModificaciones.ItemsSource = _datosMoto.Modificaciones;
+                DgMotoServicios.ItemsSource = _datosMoto.Servicios;
+
+                SuscribirItemsMoto();
+                ActualizarUIMoto();
+
+                _repoMoto.Guardar(_datosMoto);
+                LblEstadoMotoModulo.Text = "Plantilla Continental GT cargada exitosamente";
+                LblEstadoMotoModulo.Foreground = System.Windows.Media.Brushes.DarkViolet;
+            }
+        }
+
+        private void BtnGuardarMoto_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (int.TryParse(TxtMotoKmActual.Text.Replace(".", "").Replace(",", "").Trim(), out int km))
+                {
+                    _datosMoto.KilometrajeActual = km;
+                }
+
+                _repoMoto.Guardar(_datosMoto);
+                LblEstadoMotoModulo.Text = "Datos de la moto guardados correctamente";
+                LblEstadoMotoModulo.Foreground = System.Windows.Media.Brushes.DarkGreen;
+                MessageBox.Show("Datos y mantenimientos de la moto guardados exitosamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al guardar datos de moto: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         #endregion

@@ -26,7 +26,7 @@ namespace CalculadoraFiscalUI.Models
         public decimal MontoActual { get; set; }
         public decimal AportePorQuincena { get; set; } = 325m; // Promedio o compatibilidad
         public decimal AporteQ1 { get; set; } = 300m;
-        public decimal AporteQ2 { get; set; } = 350m;
+        public decimal AporteQ2 { get; set; } = 300m;
         public decimal MontoDecimo { get; set; } = 588m;
         public DateTime FechaLimite { get; set; } = new DateTime(2027, 10, 30);
         public bool ActivarIncrementoFuturo { get; set; } = true;
